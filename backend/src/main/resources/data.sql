@@ -1,0 +1,1 @@
+-- Initial data is included in scripts/init_mysql.sql.

@@ -1,0 +1,2 @@
+-- The application does not auto-run this file by default.
+-- Use ../../../../scripts/init_mysql.sql to create the smart_campus database and seed demo data.
