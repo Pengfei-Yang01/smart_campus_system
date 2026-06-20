@@ -246,6 +246,7 @@ public class AdminController {
      * 学生列表和详情查询共用的数据库查询片段。
      */
     private String studentSql(String where) {
+        String whereClause = where == null || where.isBlank() ? "" : where.strip() + "\n";
         return """
                 select u.user_id, u.student_no, u.username, u.real_name, u.phone, u.email, u.account_status,
                        sp.college, sp.major, sp.class_name className, sp.grade,
@@ -254,7 +255,7 @@ public class AdminController {
                 left join student_profile sp on u.user_id = sp.user_id
                 left join user_role ur on u.user_id = ur.user_id
                 left join role r on ur.role_id = r.role_id
-                """ + where + """
+                """ + whereClause + """
                 group by u.user_id, u.student_no, u.username, u.real_name, u.phone, u.email, u.account_status,
                          sp.college, sp.major, sp.class_name, sp.grade
                 """;
