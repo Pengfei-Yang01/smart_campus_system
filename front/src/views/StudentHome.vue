@@ -1,4 +1,6 @@
 <template>
+  <!-- 学生首页，展示个人概览、近期活动和
+       组织负责人申请表单。 -->
   <AppLayout title="学生首页" subtitle="近期活动、个人积分概览、负责人申请进度和常用入口">
     <div class="metric-grid">
       <div class="metric"><span>有效报名</span><b>{{ data.registrationCount || 0 }}</b></div>
@@ -55,6 +57,7 @@ const auth = useAuthStore()
 const data = ref({})
 const form = reactive({ applyReason: '', contact: '', experience: '' })
 
+// 把最新负责人申请记录转换成可读提示。
 const leaderStatusText = computed(() => {
   const row = data.value.leaderApply
   if (!row?.status) return ''
@@ -62,14 +65,17 @@ const leaderStatusText = computed(() => {
   if (row.status === 'APPROVED') return '申请已通过，已开放组织负责人管理入口'
   return '申请正在等待管理员审批'
 })
+// 根据申请审核状态匹配界面提示颜色。
 const leaderAlertType = computed(() => data.value.leaderApply?.status === 'APPROVED' ? 'success' : data.value.leaderApply?.status === 'REJECTED' ? 'warning' : 'info')
 
 onMounted(load)
 
+// 一次请求加载全部首页指标卡和近期活动数据。
 async function load() {
   data.value = await http.get('/dashboard/student')
 }
 
+// 提交负责人申请并刷新首页，让状态立即更新。
 async function submit() {
   await http.post('/students/leader-apply', form)
   ElMessage.success('申请已提交')

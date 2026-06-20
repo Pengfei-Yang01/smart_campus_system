@@ -15,6 +15,8 @@ import AdminStudents from '../views/AdminStudents.vue'
 import AdminOrganizations from '../views/AdminOrganizations.vue'
 import AdminScores from '../views/AdminScores.vue'
 
+// 整个前端的路由表。公开页面保持最少，其余
+// 业务页面都由下面的导航守卫保护。
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -36,6 +38,11 @@ const router = createRouter({
   ]
 })
 
+// 全局导航守卫：
+// - 未登录用户只能打开登录页
+// - 已登录用户访问登录页时会被重定向
+// - 角色受限页面会回退到当前用户自己的首页
+// - 主角色配置用于限制只有对应主角色可以访问的首页
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.path !== '/login' && !auth.token) return '/login'

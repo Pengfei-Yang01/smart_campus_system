@@ -1,4 +1,6 @@
 <template>
+  <!-- 积分管理页。管理员在这里审核已提交的积分记录，
+       并按活动类型维护积分规则权重。 -->
   <AppLayout title="积分审核" subtitle="审核负责人提交的活动综测积分，并维护活动类型默认积分规则">
     <section class="panel">
       <el-tabs>
@@ -69,29 +71,35 @@ const ruleId = ref(null)
 const ruleForm = reactive({ baseScore: 0, normalWeight: 1, memberWeight: 1.2, leaderWeight: 1.5, effectiveStatus: 'ENABLED', ruleDesc: '' })
 onMounted(loadAll)
 
+// 同时加载两个标签页的数据，切换时无需等待。
 async function loadAll() {
   await Promise.all([loadScores(), loadRules()])
 }
 
+// 按可选审核状态筛选并加载积分记录。
 async function loadScores() {
   scores.value = await http.get('/scores', { params: { status: status.value } })
 }
 
+// 加载活动积分计算使用的积分规则。
 async function loadRules() {
   rules.value = await http.get('/score-rules')
 }
 
+// 通过或驳回一条积分记录。
 async function auditScore(row, auditStatus, rejectReason = '') {
   await http.patch(`/scores/${row.score_id}/audit`, { auditStatus, rejectReason })
   ElMessage.success('积分审核已处理')
   await loadScores()
 }
 
+// 先询问驳回原因，再复用积分审核函数。
 async function rejectScore(row) {
   const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回积分记录')
   await auditScore(row, 'REJECTED', value)
 }
 
+// 打开规则编辑弹窗，并把数据库字段复制到表单模型。
 function openRule(row) {
   ruleId.value = row.rule_id
   Object.assign(ruleForm, {
@@ -102,6 +110,7 @@ function openRule(row) {
   ruleVisible.value = true
 }
 
+// 保存积分规则修改，并刷新规则表格。
 async function saveRule() {
   await http.put(`/scores/rules/${ruleId.value}`, ruleForm)
   ElMessage.success('积分规则已保存')

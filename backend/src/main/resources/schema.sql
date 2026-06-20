@@ -1,2 +1,2 @@
--- The application does not auto-run this file by default.
--- Use ../../../../scripts/init_mysql.sql to create the smart_campus database and seed demo data.
+-- 应用默认不会自动执行该文件。
+-- 请使用项目根目录初始化脚本创建数据库并写入演示数据。

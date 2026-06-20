@@ -1,4 +1,6 @@
 <template>
+  <!-- 管理员首页，展示全局统计和待处理事项快捷入口。
+        -->
   <AppLayout title="管理员首页" subtitle="面向系统管理员的审批概览、系统统计和后台入口">
     <div class="metric-grid">
       <div class="metric"><span>学生账号</span><b>{{ stats.studentCount || 0 }}</b></div>
@@ -46,8 +48,11 @@ import http from '../api/http'
 
 const stats = ref({})
 const recentActivities = ref([])
+
+// 仪表盘指标卡中展示的待处理总数。
 const pendingTotal = computed(() => Number(stats.value.pendingLeaderApplyCount || 0) + Number(stats.value.pendingOrgApplyCount || 0) + Number(stats.value.pendingScoreCount || 0))
 
+// 为仪表盘加载统计数据和近期活动列表。
 onMounted(async () => {
   const [statRows, activityRows] = await Promise.all([
     http.get('/admin/stats'),

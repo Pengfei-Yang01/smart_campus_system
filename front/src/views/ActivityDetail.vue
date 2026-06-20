@@ -1,4 +1,6 @@
 <template>
+  <!-- 活动详情页，展示活动基本信息、积分信息和
+       当前用户可执行的报名操作。 -->
   <AppLayout title="活动详情" subtitle="查看活动要求、报名限制、加分说明和当前报名状态">
     <section class="panel">
       <div class="table-actions">
@@ -37,20 +39,26 @@ import http from '../api/http'
 
 const route = useRoute()
 const detail = ref({})
+
+// 只有活动开放、当前用户尚未报名，且
+// 仍有剩余名额时才允许报名。
 const canRegister = computed(() => detail.value.activity_status === 'OPEN' && !detail.value.registered && Number(detail.value.registered_count || 0) < Number(detail.value.capacity || 0))
 
 onMounted(load)
 
+// 根据路由编号加载详情。
 async function load() {
   detail.value = await http.get(`/activities/${route.params.id}`)
 }
 
+// 为当前用户报名，然后重新加载详情以更新按钮状态和人数。
 async function register() {
   await http.post(`/activities/${route.params.id}/register`)
   ElMessage.success('报名成功')
   await load()
 }
 
+// 取消当前用户的有效报名，然后重新加载详情。
 async function cancel() {
   await http.delete(`/activities/${route.params.id}/register`)
   ElMessage.success('已取消报名')

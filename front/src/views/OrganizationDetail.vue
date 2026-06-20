@@ -1,4 +1,6 @@
 <template>
+  <!-- 组织详情页，组合展示组织信息、已发布活动和
+       加入组织弹窗。 -->
   <AppLayout title="组织详情" subtitle="查看组织简介、发布活动，并提交加入申请">
     <section class="panel">
       <div class="table-actions">
@@ -57,10 +59,18 @@ const detail = ref({})
 const orgRows = ref([])
 const joinVisible = ref(false)
 const joinReason = ref('')
+
+// 当前成员状态来自组织列表接口，因此详情页
+// 同时加载列表作为当前组织关系状态的辅助查询。
 const myStatus = computed(() => orgRows.value.find((o) => String(o.org_id) === String(route.params.id))?.my_status)
+
+// 管理员可以管理所有组织；负责人只能管理
+// 组织详情中负责人就是当前登录用户时允许管理。
 const canManage = computed(() => auth.isAdmin || (auth.isLeader && detail.value.principal_user_id === auth.user?.userId))
 
 onMounted(load)
+
+// 并行加载详情和当前用户的成员关系。
 async function load() {
   const [orgDetail, orgList] = await Promise.all([
     http.get(`/organizations/${route.params.id}`),
@@ -70,6 +80,7 @@ async function load() {
   orgRows.value = orgList
 }
 
+// 提交成员申请，关闭弹窗并刷新状态。
 async function join() {
   await http.post(`/organizations/${route.params.id}/join`, { applyReason: joinReason.value })
   ElMessage.success('加入申请已提交')

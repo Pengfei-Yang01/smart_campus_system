@@ -1,5 +1,11 @@
-package com.example.campus;
+package com.example.campus.student;
 
+import com.example.campus.common.ApiResponse;
+import com.example.campus.common.BusinessException;
+import com.example.campus.common.Db;
+import com.example.campus.dto.StudentRequests.LeaderApplyRequest;
+import com.example.campus.security.CurrentUser;
+import com.example.campus.security.UserContext;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -7,15 +13,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 学生端首页、申请和个人记录接口。
+ */
 @RestController
 @RequestMapping("/api")
 public class StudentController {
     private final Db db;
 
+    /**
+     * 注入学生端接口使用的数据库工具类。
+     */
     public StudentController(Db db) {
         this.db = db;
     }
 
+    /**
+     * 返回学生首页数据：近期活动、报名数量、
+     * 待审核积分数量、已通过积分总数和最新负责人申请。
+     */
     @GetMapping("/dashboard/student")
     public ApiResponse<Map<String, Object>> dashboard() {
         CurrentUser user = UserContext.get();
@@ -40,19 +56,28 @@ public class StudentController {
         ));
     }
 
+    /**
+     * 提交当前学生成为组织负责人的申请。
+     */
     @PostMapping("/students/leader-apply")
-    public ApiResponse<Object> applyLeader(@RequestBody Map<String, Object> body) {
+    public ApiResponse<Object> applyLeader(@RequestBody LeaderApplyRequest request) {
         CurrentUser user = UserContext.get();
+        if (user.isLeader() || user.isAdmin()) {
+            throw new BusinessException("当前角色不需要申请组织负责人");
+        }
         if (db.count("select count(*) from leader_apply where user_id=? and status='PENDING'", user.userId()) > 0) {
-            throw new BusinessException("已有待审核的负责人申请");
+            throw new BusinessException("你已有待审核的负责人申请");
         }
         Long id = db.insert("""
                 insert into leader_apply(user_id, apply_reason, contact, experience)
                 values(?, ?, ?, ?)
-                """, user.userId(), Db.required(body, "applyReason"), Db.str(body, "contact"), Db.str(body, "experience"));
+                """, user.userId(), Db.require(request.applyReason(), "applyReason"), request.contact(), request.experience());
         return ApiResponse.ok(Map.of("applyId", id));
     }
 
+    /**
+     * 查询当前用户的活动报名记录。
+     */
     @GetMapping("/me/registrations")
     public ApiResponse<Object> myRegistrations() {
         CurrentUser user = UserContext.get();
@@ -67,6 +92,9 @@ public class StudentController {
                 """, user.userId()));
     }
 
+    /**
+     * 查询当前用户的积分记录。
+     */
     @GetMapping("/me/scores")
     public ApiResponse<Object> myScores() {
         CurrentUser user = UserContext.get();

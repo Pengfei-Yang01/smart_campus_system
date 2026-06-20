@@ -1,4 +1,6 @@
 <template>
+  <!-- 组织负责人首页，只展示负责人相关概览数据，
+       并刻意避免显示学生专属申请表单。 -->
   <AppLayout title="负责人首页" subtitle="面向组织负责人的组织、成员、活动和录分概览">
     <div class="metric-grid">
       <div class="metric"><span>负责组织</span><b>{{ managedOrgs.length }}</b></div>
@@ -60,11 +62,19 @@ const myApplies = ref([])
 const pendingScores = ref([])
 const memberRows = ref([])
 
+// 当前负责人名下的组织。
 const managedOrgs = computed(() => orgs.value.filter((org) => org.principal_user_id === auth.user?.userId))
+
+// 使用集合加快活动筛选，避免重复遍历数组。
 const managedOrgIds = computed(() => new Set(managedOrgs.value.map((org) => org.org_id)))
+
+// 当前负责人管理的组织所发布的活动。
 const managedActivities = computed(() => activities.value.filter((activity) => managedOrgIds.value.has(activity.org_id)))
+
+// 所有负责组织中的待审核成员申请数。
 const pendingMembers = computed(() => memberRows.value.filter((member) => member.join_status === 'PENDING').length)
 
+// 加载负责人首页数据，然后获取负责组织的成员列表。
 onMounted(async () => {
   const [orgRows, activityRows, applyRows, scoreRows] = await Promise.all([
     http.get('/organizations'),

@@ -1,4 +1,6 @@
 <template>
+  <!-- 活动列表页。用户可以筛选活动，并打开详情页进行
+       报名或取消报名。 -->
   <AppLayout title="活动中心" subtitle="按类型、状态和关键词筛选活动，查看剩余名额并进入详情报名">
     <section class="panel">
       <div class="table-actions">
@@ -42,14 +44,19 @@ const rows = ref([])
 const page = ref(1)
 const pageSize = 10
 const statuses = ['DRAFT', 'OPEN', 'CLOSED', 'FINISHED', 'OFFLINE']
+// 查询对象会作为地址参数传给活动列表接口。
 const query = reactive({ keyword: '', typeId: null, status: '' })
+
+// 本项目使用前端分页，让后端接口保持简单。
 const pageRows = computed(() => rows.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 
+// 先加载字典数据，让类型筛选器可以立即渲染。
 onMounted(async () => {
   types.value = await http.get('/activity-types')
   await load()
 })
 
+// 按当前筛选条件获取活动，并重置到第一页。
 async function load() {
   rows.value = await http.get('/activities', { params: query })
   page.value = 1

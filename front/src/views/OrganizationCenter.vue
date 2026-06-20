@@ -1,4 +1,6 @@
 <template>
+  <!-- 组织列表页，用户可以浏览全部组织，并打开
+       详情页查看活动或申请加入。 -->
   <AppLayout title="组织中心" subtitle="查看校园组织、组织关系和组织发布的活动">
     <section class="panel">
       <div class="table-actions">
@@ -27,12 +29,16 @@ import http from '../api/http'
 
 const rows = ref([])
 const keyword = ref('')
+
+// 前端按组织名称、负责人和类型进行关键字筛选。
 const filtered = computed(() => rows.value.filter((row) => {
   const text = `${row.org_name} ${row.principal_name} ${row.org_type}`
   return !keyword.value || text.includes(keyword.value)
 }))
 
 onMounted(load)
+
+// 加载组织列表及当前用户的成员关系状态。
 async function load() {
   rows.value = await http.get('/organizations')
 }

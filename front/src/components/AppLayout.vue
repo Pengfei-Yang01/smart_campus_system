@@ -1,4 +1,6 @@
 <template>
+  <!-- 登录后的共享页面外壳。所有角色页面复用这里的侧边栏和顶部栏，
+       slot 区域渲染每个页面自己的内容。 -->
   <div class="page">
     <aside class="sidebar">
       <div class="brand side-brand">
@@ -7,6 +9,7 @@
       </div>
 
       <el-menu :default-active="$route.path" router>
+        <!-- 学生菜单：学生首页以及通用浏览、个人记录页面。 -->
         <template v-if="auth.primaryRole === 'STUDENT'">
           <el-menu-item index="/home"><el-icon><House /></el-icon><span>学生首页</span></el-menu-item>
           <el-menu-item index="/activities"><el-icon><Calendar /></el-icon><span>活动中心</span></el-menu-item>
@@ -15,6 +18,7 @@
           <el-menu-item index="/ai"><el-icon><ChatLineRound /></el-icon><span>AI 助手</span></el-menu-item>
         </template>
 
+        <!-- 组织负责人菜单：负责人管理页面以及通用页面。 -->
         <template v-else-if="auth.primaryRole === 'ORG_LEADER'">
           <el-menu-item index="/leader-home"><el-icon><House /></el-icon><span>负责人首页</span></el-menu-item>
           <el-menu-item index="/leader"><el-icon><Management /></el-icon><span>组织负责人管理</span></el-menu-item>
@@ -24,6 +28,7 @@
           <el-menu-item index="/ai"><el-icon><ChatLineRound /></el-icon><span>AI 助手</span></el-menu-item>
         </template>
 
+        <!-- 管理员菜单：后台维护页面以及通用页面。 -->
         <template v-else>
           <el-menu-item index="/admin"><el-icon><House /></el-icon><span>管理员首页</span></el-menu-item>
           <el-menu-item index="/admin/students"><el-icon><User /></el-icon><span>学生管理</span></el-menu-item>
@@ -77,12 +82,15 @@ defineProps({ title: String, subtitle: String })
 const auth = useAuthStore()
 const router = useRouter()
 
+// 在顶部栏展示可读的角色标签。主角色同时控制
+// 侧边栏渲染哪一组菜单。
 const roleTag = computed(() => {
   if (auth.primaryRole === 'ADMIN') return { label: '系统管理员', type: 'danger' }
   if (auth.primaryRole === 'ORG_LEADER') return { label: '组织负责人', type: 'warning' }
   return { label: '普通学生', type: 'success' }
 })
 
+// 退出登录时通过状态仓库清空本地会话，然后回到登录页。
 function logout() {
   auth.logout()
   router.push('/login')

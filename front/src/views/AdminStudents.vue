@@ -1,4 +1,6 @@
 <template>
+  <!-- 学生管理页。支持搜索学生、编辑
+       账号/资料字段，以及审核负责人申请。 -->
   <AppLayout title="管理员学生管理" subtitle="学生查询、账号启停、信息修改、负责人申请审批和学生详情追溯">
     <section class="panel">
       <div class="table-actions">
@@ -83,7 +85,11 @@ const editId = ref(null)
 const detail = ref({})
 const filters = reactive({ keyword: '', accountStatus: '', applyStatus: '' })
 const editForm = reactive({ realName: '', accountStatus: 'ENABLED', phone: '', email: '', college: '', major: '', className: '', grade: '' })
+
+// 按用户编号映射申请记录，方便表格行展示和审核每个学生的最新申请。
 const applyMap = computed(() => Object.fromEntries(applies.value.map((a) => [a.user_id, a])))
+
+// 前端筛选条件组合了关键字、账号状态和负责人申请状态。
 const filtered = computed(() => students.value.filter((row) => {
   const kw = `${row.student_no} ${row.username} ${row.real_name}`
   return (!filters.keyword || kw.includes(filters.keyword)) &&
@@ -92,18 +98,22 @@ const filtered = computed(() => students.value.filter((row) => {
 }))
 
 onMounted(load)
+
+// 并行加载学生列表和负责人申请列表。
 async function load() {
   const [studentRows, applyRows] = await Promise.all([http.get('/admin/students'), http.get('/admin/leader-applies')])
   students.value = studentRows
   applies.value = applyRows
 }
 
+// 打开编辑弹窗，并把当前行字段复制到响应式表单。
 function openEdit(row) {
   editId.value = row.user_id
   Object.assign(editForm, { realName: row.real_name, accountStatus: row.account_status, phone: row.phone, email: row.email, college: row.college, major: row.major, className: row.className, grade: row.grade })
   editVisible.value = true
 }
 
+// 保存选中学生的账号和资料修改。
 async function saveStudent() {
   await http.patch(`/admin/students/${editId.value}`, editForm)
   ElMessage.success('学生信息已保存')
@@ -111,17 +121,20 @@ async function saveStudent() {
   await load()
 }
 
+// 为详情弹窗加载完整学生详情。
 async function openDetail(row) {
   detail.value = await http.get(`/admin/students/${row.user_id}`)
   detailVisible.value = true
 }
 
+// 通过或驳回学生待审核的负责人申请。
 async function auditLeader(row, status, rejectReason = '') {
   await http.patch(`/admin/leader-applies/${applyMap.value[row.user_id].apply_id}`, { status, rejectReason })
   ElMessage.success('负责人申请已处理')
   await load()
 }
 
+// 先询问驳回原因，再复用通用审核函数。
 async function rejectLeader(row) {
   const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回负责人申请')
   await auditLeader(row, 'REJECTED', value)

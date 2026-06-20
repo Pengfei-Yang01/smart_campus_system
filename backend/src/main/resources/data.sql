@@ -1,1 +1,1 @@
--- Initial data is included in scripts/init_mysql.sql.
+-- 初始数据位于项目根目录初始化脚本中。

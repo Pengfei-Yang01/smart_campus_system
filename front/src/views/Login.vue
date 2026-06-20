@@ -1,4 +1,6 @@
 <template>
+  <!-- 登录/注册页，是唯一无需登录即可访问的路由，
+       后端响应成功后通过 auth store 创建会话。 -->
   <div class="login-wrap">
     <div class="login-card">
       <section class="login-side">
@@ -71,7 +73,10 @@ const router = useRouter()
 const mode = ref('login')
 const loading = ref(false)
 
+// 默认填入演示账号，方便本地快速测试，用户也可以自行修改。
 const loginForm = reactive({ username: 'admin', password: '123456' })
+
+// 注册表单直接对应后端注册请求对象。
 const registerForm = reactive({
   username: '',
   studentNo: '',
@@ -83,6 +88,7 @@ const registerForm = reactive({
   grade: '2023'
 })
 
+// 通过认证状态仓库登录，然后跳转到角色专属首页。
 async function login() {
   loading.value = true
   try {
@@ -94,6 +100,7 @@ async function login() {
   }
 }
 
+// 注册普通学生账号，并使用返回的令牌进入系统。
 async function register() {
   loading.value = true
   try {

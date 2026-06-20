@@ -1,4 +1,6 @@
 <template>
+  <!-- 负责人工作台，覆盖组织申请、组织资料维护、
+       成员审核、活动发布、签到和录分。 -->
   <AppLayout title="组织负责人管理" subtitle="处理组织申请、成员审批、活动发布、状态维护、签到和录分">
     <section class="panel">
       <div class="table-actions">
@@ -155,7 +157,11 @@ const selectedActivityId = ref(null)
 const applyDialog = ref(false)
 const activityDialog = ref(false)
 const editingId = ref(null)
+// 管理员可查看所有组织；负责人只查看
+// 自己负责的组织。
 const managedOrgs = computed(() => auth.isAdmin ? orgs.value : orgs.value.filter((o) => o.principal_user_id === auth.user?.userId))
+
+// 活动表格按当前选中组织限定范围。
 const orgActivities = computed(() => activities.value.filter((a) => !currentOrgId.value || a.org_id === currentOrgId.value))
 const orgForm = reactive({ orgId: null, orgName: '', orgType: 'CLUB', description: '', contact: '' })
 const applyForm = reactive({ orgName: '', orgType: 'CLUB', description: '', applyReason: '', contact: '' })
@@ -163,10 +169,12 @@ const activityForm = reactive(defaultActivity())
 
 onMounted(loadAll)
 
+// 创建和重置流程共用的活动表单初始值。
 function defaultActivity() {
   return { activityName: '', orgId: null, typeId: null, startTime: '', endTime: '', registrationDeadline: '', location: '', capacity: 50, baseScore: 1, description: '', requirement: '', activityStatus: 'DRAFT' }
 }
 
+// 加载负责人工作台需要的全部下拉框和列表数据。
 async function loadAll() {
   const [orgRows, applyRows, typeRows, activityRows] = await Promise.all([
     http.get('/organizations'), http.get('/organizations/applies/mine'), http.get('/activity-types'), http.get('/activities')
@@ -179,18 +187,21 @@ async function loadAll() {
   await loadOrgWork()
 }
 
+// 加载依赖当前选中组织的数据。
 async function loadOrgWork() {
   const org = managedOrgs.value.find((o) => o.org_id === currentOrgId.value)
   if (org) Object.assign(orgForm, { orgId: org.org_id, orgName: org.org_name, orgType: org.org_type, description: org.description, contact: org.contact })
   if (currentOrgId.value) members.value = await http.get(`/organizations/${currentOrgId.value}/members`)
 }
 
+// 保存当前选中组织的资料修改。
 async function saveOrg() {
   await http.put(`/organizations/${orgForm.orgId}`, orgForm)
   ElMessage.success('组织信息已保存')
   await loadAll()
 }
 
+// 提交新的组织创建申请。
 async function submitOrgApply() {
   await http.post('/organizations/apply', applyForm)
   ElMessage.success('组织成立申请已提交')
@@ -198,23 +209,27 @@ async function submitOrgApply() {
   await loadAll()
 }
 
+// 通过或驳回待审核的组织成员申请。
 async function auditMember(row, status, reason = '') {
   await http.patch(`/organizations/${currentOrgId.value}/members/${row.user_id}`, { joinStatus: status, rejectReason: reason })
   ElMessage.success('成员申请已处理')
   await loadOrgWork()
 }
 
+// 先询问驳回原因，再复用成员审核函数。
 async function rejectMember(row) {
   const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回成员申请')
   await auditMember(row, 'REJECTED', value)
 }
 
+// 以创建模式打开活动弹窗。
 function openActivity() {
   editingId.value = null
   Object.assign(activityForm, defaultActivity(), { orgId: currentOrgId.value, typeId: types.value[0]?.type_id })
   activityDialog.value = true
 }
 
+// 以编辑模式打开活动弹窗，并把后端字段名映射到表单字段。
 function editActivity(row) {
   editingId.value = row.activity_id
   Object.assign(activityForm, {
@@ -225,6 +240,7 @@ function editActivity(row) {
   activityDialog.value = true
 }
 
+// 根据当前是否正在编辑来创建或更新活动。
 async function saveActivity() {
   if (editingId.value) await http.put(`/activities/${editingId.value}`, activityForm)
   else await http.post('/activities', activityForm)
@@ -233,22 +249,26 @@ async function saveActivity() {
   await loadAll()
 }
 
+// 通过后端状态机接口切换活动生命周期状态。
 async function changeStatus(row, status) {
   await http.patch(`/activities/${row.activity_id}/status`, { status })
   ElMessage.success('活动状态已更新')
   await loadAll()
 }
 
+// 加载签到标签页当前选中活动的报名记录。
 async function loadRegistrations() {
   if (!selectedActivityId.value) return
   registrations.value = await http.get(`/activities/${selectedActivityId.value}/registrations`)
 }
 
+// 把一条报名记录标记为已签到或缺勤。
 async function checkin(row, checkinStatus) {
   await http.patch(`/activities/${selectedActivityId.value}/registrations/${row.registration_id}/checkin`, { checkinStatus })
   await loadRegistrations()
 }
 
+// 为某个已报名用户提交积分记录，之后等待管理员审核。
 async function recordScore(row) {
   await http.post('/scores', { activityId: selectedActivityId.value, userId: row.user_id })
   ElMessage.success('积分已写入并等待管理员审核')

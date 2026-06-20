@@ -1,5 +1,15 @@
-package com.example.campus;
+package com.example.campus.organization;
 
+import com.example.campus.common.ApiResponse;
+import com.example.campus.common.BusinessException;
+import com.example.campus.common.Db;
+import com.example.campus.dto.OrganizationRequests.JoinRequest;
+import com.example.campus.dto.OrganizationRequests.MemberAuditRequest;
+import com.example.campus.dto.OrganizationRequests.OrganizationApplyRequest;
+import com.example.campus.dto.OrganizationRequests.OrganizationUpdateRequest;
+import com.example.campus.enums.JoinStatus;
+import com.example.campus.security.CurrentUser;
+import com.example.campus.security.UserContext;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -10,27 +20,41 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 组织浏览、申请和成员管理接口。
+ */
 @RestController
 @RequestMapping("/api/organizations")
 public class OrganizationController {
     private final Db db;
 
+    /**
+     * 注入组织模块使用的数据库工具类。
+     */
     public OrganizationController(Db db) {
         this.db = db;
     }
 
+    /**
+     * 查询组织列表，并包含当前用户与组织的关系状态。
+     */
     @GetMapping
     public ApiResponse<Object> list() {
         CurrentUser user = UserContext.get();
         return ApiResponse.ok(db.jdbc().queryForList("""
                 select o.*, u.real_name principal_name,
-                       (select join_status from organization_member m where m.org_id=o.org_id and m.user_id=? order by joined_at desc limit 1) my_status
+                       (select join_status from organization_member m
+                        where m.org_id=o.org_id and m.user_id=?
+                        order by joined_at desc limit 1) my_status
                 from organization o
                 join user_account u on o.principal_user_id = u.user_id
                 order by o.created_at desc
                 """, user.userId()));
     }
 
+    /**
+     * 返回组织详情以及该组织发布的活动。
+     */
     @GetMapping("/{id}")
     public ApiResponse<Object> detail(@PathVariable Long id) {
         Map<String, Object> org = db.one("""
@@ -47,23 +71,30 @@ public class OrganizationController {
         return ApiResponse.ok(org);
     }
 
+    /**
+     * 组织负责人可以申请创建新组织。
+     */
     @PostMapping("/apply")
-    public ApiResponse<Object> applyCreate(@RequestBody Map<String, Object> body) {
+    public ApiResponse<Object> applyCreate(@RequestBody OrganizationApplyRequest request) {
         CurrentUser user = UserContext.get();
         if (!user.isLeader()) {
-            throw new BusinessException("只有组织负责人可以提交组织成立申请");
+            throw new BusinessException("只有组织负责人可以申请创建组织");
         }
         if (db.count("select count(*) from organization_apply where applicant_id=? and status='PENDING'", user.userId()) > 0) {
-            throw new BusinessException("已有待审核的组织成立申请");
+            throw new BusinessException("你已有待审核的组织申请");
         }
+
         Long id = db.insert("""
                 insert into organization_apply(applicant_id, org_name, org_type, description, apply_reason, contact)
                 values(?, ?, ?, ?, ?, ?)
-                """, user.userId(), Db.required(body, "orgName"), Db.required(body, "orgType"),
-                Db.str(body, "description"), Db.required(body, "applyReason"), Db.str(body, "contact"));
+                """, user.userId(), Db.require(request.orgName(), "orgName"), Db.require(request.orgType(), "orgType").name(),
+                request.description(), Db.require(request.applyReason(), "applyReason"), request.contact());
         return ApiResponse.ok(Map.of("orgApplyId", id));
     }
 
+    /**
+     * 查询当前用户提交的组织申请。
+     */
     @GetMapping("/applies/mine")
     public ApiResponse<Object> myApplies() {
         CurrentUser user = UserContext.get();
@@ -76,45 +107,58 @@ public class OrganizationController {
                 """, user.userId()));
     }
 
+    /**
+     * 更新组织基本信息。
+     */
     @PutMapping("/{id}")
-    public ApiResponse<Object> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ApiResponse<Object> update(@PathVariable Long id, @RequestBody OrganizationUpdateRequest request) {
         ensureCanManageOrg(id);
         db.jdbc().update("""
                 update organization set org_name=?, org_type=?, description=?, contact=?
                 where org_id=?
-                """, Db.required(body, "orgName"), Db.required(body, "orgType"),
-                Db.str(body, "description"), Db.str(body, "contact"), id);
+                """, Db.require(request.orgName(), "orgName"), Db.require(request.orgType(), "orgType").name(),
+                request.description(), request.contact(), id);
         return ApiResponse.ok(Map.of("orgId", id));
     }
 
+    /**
+     * 允许学生申请加入启用状态的组织。
+     */
     @PostMapping("/{id}/join")
-    public ApiResponse<Object> join(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ApiResponse<Object> join(@PathVariable Long id, @RequestBody JoinRequest request) {
         CurrentUser user = UserContext.get();
         Map<String, Object> org = db.one("select * from organization where org_id=?", id);
         if (!"ACTIVE".equals(String.valueOf(org.get("org_status")))) {
-            throw new BusinessException("组织未启用，暂不能申请加入");
+            throw new BusinessException("组织未启用，不能申请加入");
         }
+
         Map<String, Object> old = db.maybeOne("select * from organization_member where org_id=? and user_id=?", id, user.userId());
-        if (old != null && "APPROVED".equals(String.valueOf(old.get("join_status")))) {
-            throw new BusinessException("你已经是该组织成员");
+        if (old != null && JoinStatus.APPROVED.name().equals(String.valueOf(old.get("join_status")))) {
+            throw new BusinessException("你已加入该组织");
         }
-        if (old != null && "PENDING".equals(String.valueOf(old.get("join_status")))) {
-            throw new BusinessException("已有待审批的加入申请");
+        if (old != null && JoinStatus.PENDING.name().equals(String.valueOf(old.get("join_status")))) {
+            throw new BusinessException("你的加入申请正在审核中");
         }
+
+        // 被驳回或已退出的成员可以再次申请；这里复用已有记录，
+        // 因为组织成员表以组织编号和用户编号作为主键。
         if (old == null) {
             db.jdbc().update("""
                     insert into organization_member(org_id, user_id, member_role, join_status, apply_reason)
                     values(?, ?, 'MEMBER', 'PENDING', ?)
-                    """, id, user.userId(), Db.str(body, "applyReason"));
+                    """, id, user.userId(), request.applyReason());
         } else {
             db.jdbc().update("""
                     update organization_member set join_status='PENDING', apply_reason=?, reject_reason=null, joined_at=now()
                     where org_id=? and user_id=?
-                    """, Db.str(body, "applyReason"), id, user.userId());
+                    """, request.applyReason(), id, user.userId());
         }
         return ApiResponse.ok(Map.of("orgId", id));
     }
 
+    /**
+     * 查询组织成员和待审核的加入申请。
+     */
     @GetMapping("/{id}/members")
     public ApiResponse<Object> members(@PathVariable Long id) {
         ensureCanManageOrg(id);
@@ -128,27 +172,37 @@ public class OrganizationController {
                 """, id));
     }
 
+    /**
+     * 通过或驳回待审核的组织加入申请。
+     */
     @PatchMapping("/{id}/members/{userId}")
-    public ApiResponse<Object> auditMember(@PathVariable Long id, @PathVariable Long userId, @RequestBody Map<String, Object> body) {
+    public ApiResponse<Object> auditMember(@PathVariable Long id,
+                                           @PathVariable Long userId,
+                                           @RequestBody MemberAuditRequest request) {
         ensureCanManageOrg(id);
-        String status = Db.required(body, "joinStatus");
-        if (!status.equals("APPROVED") && !status.equals("REJECTED")) {
-            throw new BusinessException("成员审批状态只能为 APPROVED 或 REJECTED");
+        JoinStatus status = Db.require(request.joinStatus(), "joinStatus");
+        if (status != JoinStatus.APPROVED && status != JoinStatus.REJECTED) {
+            throw new BusinessException("成员审核状态只能是 APPROVED 或 REJECTED");
         }
+
         db.jdbc().update("""
                 update organization_member set join_status=?, reject_reason=?
                 where org_id=? and user_id=? and join_status='PENDING'
-                """, status, Db.str(body, "rejectReason"), id, userId);
+                """, status.name(), request.rejectReason(), id, userId);
         return ApiResponse.ok(Map.of("orgId", id, "userId", userId));
     }
 
+    /**
+     * 校验当前用户是否可以管理目标组织。
+     */
     private void ensureCanManageOrg(Long orgId) {
         CurrentUser user = UserContext.get();
         if (user.isAdmin()) {
             return;
         }
-        if (!user.isLeader() || db.count("select count(*) from organization where org_id=? and principal_user_id=?", orgId, user.userId()) == 0) {
-            throw new BusinessException("只能管理自己负责的组织");
+        if (!user.isLeader()
+                || db.count("select count(*) from organization where org_id=? and principal_user_id=?", orgId, user.userId()) == 0) {
+            throw new BusinessException("你只能管理自己负责的组织");
         }
     }
 }

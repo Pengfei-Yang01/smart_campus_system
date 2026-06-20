@@ -1,4 +1,6 @@
 <template>
+  <!-- 保留的旧版综合仪表盘，仅作参考。当前路由使用
+       StudentHome、LeaderManage、AdminDashboard 等拆分后的页面。 -->
   <div class="page">
     <div class="shell">
       <header class="topbar">
@@ -315,13 +317,17 @@ const activityForm = reactive(defaultActivity())
 const orgApplyForm = reactive({ orgName: '', orgType: 'CLUB', description: '', applyReason: '', contact: '' })
 const scoreForm = reactive({ activityId: null })
 
+// 旧综合页中当前用户可见的组织列表。
 const managedOrgs = computed(() => auth.isAdmin ? orgs.value : orgs.value.filter((o) => o.principal_user_id === auth.user?.userId))
+
+// 已结束活动可以作为录入积分的候选活动。
 const finishedActivities = computed(() => activities.value.filter((a) => a.activity_status === 'FINISHED' && (!leaderOrgId.value || a.org_id === leaderOrgId.value)))
 
 onMounted(async () => {
   await Promise.all([loadTypes(), loadDashboard(), loadActivities(), loadOrgs()])
 })
 
+// 活动弹窗的初始值。
 function defaultActivity() {
   return {
     activityName: '',
@@ -338,11 +344,13 @@ function defaultActivity() {
   }
 }
 
+// 清空会话并返回登录页。
 function logout() {
   auth.logout()
   router.push('/login')
 }
 
+// 旧综合页切换标签时按需刷新数据。
 async function refreshTab(name) {
   if (name === 'home') await loadDashboard()
   if (name === 'activities') await loadActivities()
@@ -352,28 +360,34 @@ async function refreshTab(name) {
   if (name === 'admin') await loadAdmin()
 }
 
+// 加载表单和筛选器使用的活动类型字典。
 async function loadTypes() {
   types.value = await http.get('/activity-types')
 }
 
+// 加载学生首页指标。
 async function loadDashboard() {
   dashboard.value = await http.get('/dashboard/student')
 }
 
+// 按当前筛选模型加载活动列表。
 async function loadActivities() {
   activities.value = await http.get('/activities', { params: activityQuery })
 }
 
+// 加载组织列表，并在需要时选择默认负责人组织。
 async function loadOrgs() {
   orgs.value = await http.get('/organizations')
   if (!leaderOrgId.value && managedOrgs.value.length) leaderOrgId.value = managedOrgs.value[0].org_id
 }
 
+// 加载个人报名记录。
 async function loadMine() {
   myRegistrations.value = await http.get('/me/registrations')
   myScores.value = await http.get('/me/scores')
 }
 
+// 加载管理员概览和审核队列。
 async function loadAdmin() {
   if (!auth.isAdmin) return
   const [stats, leaders, orgApplyRows, scores, studentRows] = await Promise.all([
@@ -390,35 +404,41 @@ async function loadAdmin() {
   students.value = studentRows
 }
 
+// 加载负责人相关的成员和活动数据。
 async function loadLeaderData() {
   await Promise.all([loadOrgs(), loadActivities()])
   if (!leaderOrgId.value) return
   orgMembers.value = await http.get(`/organizations/${leaderOrgId.value}/members`)
 }
 
+// 加载录入积分所需的报名记录。
 async function loadRegistrationsForScore() {
   if (!scoreForm.activityId) return
   scoreRegistrations.value = await http.get(`/activities/${scoreForm.activityId}/registrations`)
 }
 
+// 从旧学生标签页提交组织负责人申请。
 async function submitLeaderApply() {
   await http.post('/students/leader-apply', leaderForm)
   ElMessage.success('申请已提交')
   await loadDashboard()
 }
 
+// 为当前用户报名选中的活动。
 async function registerActivity(row) {
   await http.post(`/activities/${row.activity_id}/register`)
   ElMessage.success('报名成功')
   await loadActivities()
 }
 
+// 取消当前用户报名。
 async function cancelActivity(row) {
   await http.delete(`/activities/${row.activity_id}/register`)
   ElMessage.success('已取消报名')
   await loadActivities()
 }
 
+// 打开创建活动弹窗，并预选默认组织和类型。
 function openActivity() {
   Object.assign(activityForm, defaultActivity())
   activityForm.orgId = managedOrgs.value[0]?.org_id || null
@@ -426,6 +446,7 @@ function openActivity() {
   activityDialog.value = true
 }
 
+// 从旧弹窗保存新活动。
 async function saveActivity() {
   await http.post('/activities', activityForm)
   ElMessage.success('活动已保存')
@@ -433,6 +454,7 @@ async function saveActivity() {
   await loadActivities()
 }
 
+// 用简单弹窗显示活动简介。
 async function showActivity(row) {
   const detail = await http.get(`/activities/${row.activity_id}`)
   ElMessageBox.alert(detail.description || '暂无简介', detail.activity_name, {
@@ -440,6 +462,7 @@ async function showActivity(row) {
   })
 }
 
+// 用简单弹窗显示组织简介。
 async function showOrg(row) {
   const detail = await http.get(`/organizations/${row.org_id}`)
   ElMessageBox.alert(detail.description || '暂无简介', detail.org_name, {
@@ -447,35 +470,41 @@ async function showOrg(row) {
   })
 }
 
+// 使用默认理由申请加入组织。
 async function joinOrg(row) {
   await http.post(`/organizations/${row.org_id}/join`, { applyReason: '希望参与组织活动' })
   ElMessage.success('加入申请已提交')
   await loadOrgs()
 }
 
+// 提交新的组织申请。
 async function submitOrgApply() {
   await http.post('/organizations/apply', orgApplyForm)
   ElMessage.success('组织成立申请已提交')
   orgApplyVisible.value = false
 }
 
+// 通过或驳回成员申请。
 async function auditMember(row, status) {
   await http.patch(`/organizations/${leaderOrgId.value}/members/${row.user_id}`, { joinStatus: status })
   ElMessage.success('成员申请已处理')
   await loadLeaderData()
 }
 
+// 为选中的报名记录录入积分。
 async function recordScore(row) {
   await http.post('/scores', { activityId: scoreForm.activityId, userId: row.user_id })
   ElMessage.success('积分记录已提交审核')
 }
 
+// 管理员审核组织负责人申请。
 async function auditLeaderApply(row, status) {
   await http.patch(`/admin/leader-applies/${row.apply_id}`, { status })
   ElMessage.success('负责人申请已处理')
   await loadAdmin()
 }
 
+// 管理员审核组织创建申请。
 async function auditOrgApply(row, status) {
   await http.patch(`/admin/org-applies/${row.org_apply_id}`, { status })
   ElMessage.success('组织申请已处理')
@@ -483,6 +512,7 @@ async function auditOrgApply(row, status) {
   await loadOrgs()
 }
 
+// 管理员审核积分记录。
 async function auditScore(row, status) {
   await http.patch(`/scores/${row.score_id}/audit`, { auditStatus: status })
   ElMessage.success('积分审核已处理')

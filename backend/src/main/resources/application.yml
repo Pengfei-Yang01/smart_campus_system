@@ -1,19 +1,26 @@
 server:
+  # 后端服务端口。前端开发服务会把接口请求代理到这里。
   port: 8080
 
 spring:
   datasource:
+    # 数据库配置支持环境变量，方便其他电脑运行项目，
+    # 不需要修改源代码。
     url: ${DB_URL:jdbc:mysql://localhost:3306/smart_campus?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
+      # 保持关闭，因为项目通过根目录初始化脚本
+      # 显式创建数据库并加载初始数据。
       mode: never
   jackson:
+    # 匹配数据库日期时间值和前端显示预期。
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
 
 app:
+  # 令牌服务使用的配置，生产环境应覆盖。
   token-secret: ${TOKEN_SECRET:smart-campus-dev-secret}
   token-hours: 12

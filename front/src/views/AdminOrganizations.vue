@@ -1,4 +1,6 @@
 <template>
+  <!-- 组织管理页。管理员在这里审核组织创建申请，
+       并启用或停用已有组织。 -->
   <AppLayout title="组织与审核管理" subtitle="审批组织成立申请，管理组织状态，保留历史活动、成员和积分记录">
     <section class="panel">
       <el-tabs>
@@ -48,23 +50,27 @@ const applies = ref([])
 const orgs = ref([])
 onMounted(load)
 
+// 并行加载组织申请和当前组织列表。
 async function load() {
   const [applyRows, orgRows] = await Promise.all([http.get('/admin/org-applies'), http.get('/admin/organizations')])
   applies.value = applyRows
   orgs.value = orgRows
 }
 
+// 通过或驳回一条组织创建申请。
 async function auditApply(row, status, rejectReason = '') {
   await http.patch(`/admin/org-applies/${row.org_apply_id}`, { status, rejectReason })
   ElMessage.success('组织申请已处理')
   await load()
 }
 
+// 先询问驳回原因，再复用通用审核函数。
 async function rejectApply(row) {
   const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回组织申请')
   await auditApply(row, 'REJECTED', value)
 }
 
+// 启用或停用组织，但不删除其历史数据。
 async function setStatus(row, orgStatus) {
   await http.patch(`/admin/organizations/${row.org_id}/status`, { orgStatus })
   ElMessage.success('组织状态已更新')
