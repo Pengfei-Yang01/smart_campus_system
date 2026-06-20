@@ -1,80 +1,286 @@
-# 智慧校园综测服务与活动管理系统
+# Smart Campus Activity Management System
 
-本项目包含 Spring Boot 后端、Vue3 + Element Plus 前端、MySQL 初始化脚本。AI 问答模块按当前要求暂不实现，仅保留菜单占位和 `ai_qa_record` 表。
+智慧校园综测服务与活动管理系统是一个前后端分离的校园活动管理项目，覆盖学生报名、组织管理、活动发布、成员审批、签到、综测积分录入与审核等流程。系统按角色划分学生端、组织负责人端和管理员端，并根据主角色进入不同首页。
 
-## 技术栈
+> AI 问答模块当前按课程要求暂不接入大模型，仅保留页面占位和 `ai_qa_record` 数据表。
 
-- 后端：Spring Boot 3.3、JdbcTemplate、轻量 Token 认证
-- 前端：Vue3、Pinia、Vue Router、Element Plus、Axios
-- 数据库：MySQL 8.0
+## Features
 
-## 初始化数据库
+- 用户登录、注册、Token 鉴权和角色识别
+- 普通学生首页、活动中心、活动详情、组织中心、组织详情、我的活动与积分
+- 组织负责人首页、组织信息维护、组织成立申请、成员加入审批、活动发布与状态维护、报名名单、签到、录分
+- 管理员首页、学生管理、组织成立审批、组织状态管理、积分审核、积分规则维护
+- MySQL 初始化脚本，包含建表语句和演示数据
+- 按主角色隔离首页与导航，避免管理员、负责人、学生权限混淆
 
-```powershell
-& 'D:\mysql\mysql-8.0.42-winx64\bin\mysql.exe' -uroot -p你的密码 --execute="source D:/smart_campus_system/scripts/init_mysql.sql"
-```
+## Tech Stack
 
-脚本会创建并重置 `smart_campus` 数据库，内置测试数据。
+### Backend
 
-测试账号密码均为 `123456`：
+- Java 17
+- Spring Boot 3.3
+- Spring JDBC / JdbcTemplate
+- MySQL Connector/J
+- Maven
 
-- `admin`：管理员
-- `leader1`：组织负责人
-- `student1`：普通学生
+### Frontend
 
-## 启动后端
+- Vue 3
+- Vue Router
+- Pinia
+- Element Plus
+- Axios
+- Vite
 
-如果 MySQL 用户不是 `root`，或密码不为空，使用环境变量覆盖：
+### Database
 
-```powershell
-$env:DB_USERNAME='root'
-$env:DB_PASSWORD='你的密码'
-& 'D:\Idea\apache-maven-3.9.9-bin\apache-maven-3.9.9\bin\mvn.cmd' spring-boot:run
-```
+- MySQL 8.0+
 
-后端地址：`http://localhost:8080`
-
-如果你的 MySQL 设置了密码，请在启动前配置 `DB_PASSWORD`：
-
-```powershell
-$env:DB_PASSWORD='你的MySQL密码'
-& 'D:\Idea\apache-maven-3.9.9-bin\apache-maven-3.9.9\bin\mvn.cmd' spring-boot:run
-```
-
-## 启动前端
-
-```powershell
-cd D:\smart_campus_system\front
-& 'D:\web\nodejs\npm.cmd' install
-& 'D:\web\nodejs\npm.cmd' run dev
-```
-
-前端地址：`http://localhost:5173`
-
-## 已实现页面与模块
-
-- 登录、注册、角色识别、Token 拦截
-- 学生首页：近期活动、报名数、待审积分、负责人申请和进度展示
-- 活动中心页面：活动查询、类型/状态/关键词筛选、分页展示、剩余名额、基础分值
-- 活动详情页面：活动简介、活动要求、报名限制、加分权重、报名/取消报名
-- 组织中心页面：组织列表、组织关系、组织详情、组织活动、申请加入组织
-- 我的活动与积分页面：报名记录、签到状态、个人积分总分、积分明细、驳回原因
-- AI 助手页面：按要求暂不接入模型，保留页面占位和数据库表
-- 组织负责人管理页面：组织成立申请、申请进度、组织信息维护、成员审批、活动发布、活动编辑、状态维护、报名名单、签到、录分
-- 管理员学生管理页面：学生查询、账号启停、信息修改、负责人申请审批、学生详情追溯
-- 管理员组织与审核页面：组织成立申请审批、组织状态启停、组织详情查看
-- 管理员积分审核页面：积分审核、驳回原因、积分规则维护
-
-## 数据库脚本
-
-完整脚本位于：
+## Project Structure
 
 ```text
-D:\smart_campus_system\scripts\init_mysql.sql
+smart_campus_system
+├─ backend/                 Spring Boot backend
+├─ front/                   Vue 3 frontend
+├─ scripts/
+│  └─ init_mysql.sql        Database schema and seed data
+├─ 运行部署说明.md            Detailed Chinese setup guide
+└─ README.md
 ```
 
-更详细的跨电脑运行步骤见：
+## Prerequisites
+
+Install these tools before running the project:
+
+- JDK 17
+- Maven 3.8+
+- MySQL 8.0+
+- Node.js 18+
+- npm
+
+Check versions:
+
+```bash
+java -version
+mvn -version
+mysql --version
+node -v
+npm -v
+```
+
+## Database Setup
+
+Create and seed the database by running the SQL script.
+
+```bash
+mysql --default-character-set=utf8mb4 -uroot -p --execute="source scripts/init_mysql.sql"
+```
+
+If you run the command outside the project root, use an absolute path:
+
+```bash
+mysql --default-character-set=utf8mb4 -uroot -p --execute="source /path/to/smart_campus_system/scripts/init_mysql.sql"
+```
+
+Notes:
+
+- The script creates a database named `smart_campus`.
+- Running the script again will reset the demo database.
+- `--default-character-set=utf8mb4` is recommended because the seed data contains Chinese text.
+
+## Backend Setup
+
+Enter the backend directory:
+
+```bash
+cd backend
+```
+
+Set database connection environment variables if your MySQL settings are not the defaults.
+
+Linux/macOS:
+
+```bash
+export DB_USERNAME=root
+export DB_PASSWORD=your_mysql_password
+```
+
+Windows PowerShell:
+
+```powershell
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="your_mysql_password"
+```
+
+Run the backend:
+
+```bash
+mvn spring-boot:run
+```
+
+Backend default URL:
 
 ```text
-D:\smart_campus_system\运行部署说明.md
+http://localhost:8080
 ```
+
+Health check:
+
+```text
+http://localhost:8080/api/health
+```
+
+Expected response:
+
+```json
+{"code":0,"message":"ok","data":{"status":"UP"}}
+```
+
+## Frontend Setup
+
+Enter the frontend directory:
+
+```bash
+cd front
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
+
+```bash
+npm run dev
+```
+
+Frontend default URL:
+
+```text
+http://localhost:5173
+```
+
+The Vite development server proxies `/api` requests to:
+
+```text
+http://localhost:8080
+```
+
+Make sure the backend is running before using the frontend.
+
+## Demo Accounts
+
+The seed data includes these accounts. All passwords are:
+
+```text
+123456
+```
+
+| Username | Role | Description |
+| --- | --- | --- |
+| `admin` | Admin | Student management, organization approval, score audit |
+| `leader1` | Organization leader | Manage organizations, activities, members, check-in and scores |
+| `leader2` | Organization leader | Another organization leader account |
+| `student1` | Student | Browse activities, register, join organizations, view scores |
+| `student2` | Student | Another student account |
+
+## Role-Based Home Pages
+
+After login, the system redirects users by primary role:
+
+| Primary role | Home page | Description |
+| --- | --- | --- |
+| `ADMIN` | `/admin` | Admin dashboard |
+| `ORG_LEADER` | `/leader-home` | Organization leader dashboard |
+| `STUDENT` | `/home` | Student dashboard |
+
+Only students see the "apply to become organization leader" form. Admins and organization leaders have separate dashboards and navigation menus.
+
+## Main Pages
+
+### Student
+
+- `/home`: student dashboard, recent activities, score overview, leader application status
+- `/activities`: activity list, filters and pagination
+- `/activities/:id`: activity detail, registration and cancellation
+- `/organizations`: organization list
+- `/organizations/:id`: organization detail and join application
+- `/mine`: personal registrations and score records
+- `/ai`: AI assistant placeholder
+
+### Organization Leader
+
+- `/leader-home`: leader dashboard
+- `/leader`: organization application, organization maintenance, member approval, activity management, check-in and score submission
+- `/activities`: activity browsing
+- `/organizations`: organization browsing
+
+### Admin
+
+- `/admin`: admin dashboard and pending tasks
+- `/admin/students`: student list, account enable/disable, student detail, leader application approval
+- `/admin/organizations`: organization application approval and organization status management
+- `/admin/scores`: score audit and score rule maintenance
+
+## Build Commands
+
+Backend build:
+
+```bash
+cd backend
+mvn -DskipTests package
+```
+
+Frontend build:
+
+```bash
+cd front
+npm run build
+```
+
+## Common Issues
+
+### MySQL connection failed
+
+Check:
+
+- MySQL service is running
+- `smart_campus` database has been initialized
+- `DB_USERNAME` and `DB_PASSWORD` are correct
+- MySQL port is accessible
+
+### SQL import shows Chinese encoding errors
+
+Run the import with:
+
+```bash
+mysql --default-character-set=utf8mb4 -uroot -p --execute="source scripts/init_mysql.sql"
+```
+
+### Frontend cannot call backend APIs
+
+Check:
+
+- Backend is running on `http://localhost:8080`
+- Frontend is running from the `front` directory
+- `front/vite.config.js` contains the `/api` proxy configuration
+
+### Port is already in use
+
+Default ports:
+
+- Backend: `8080`
+- Frontend: `5173`
+
+Stop the process using the port or change the port in the corresponding configuration.
+
+## More Detailed Guide
+
+For a step-by-step Chinese setup guide, see:
+
+```text
+运行部署说明.md
+```
+
