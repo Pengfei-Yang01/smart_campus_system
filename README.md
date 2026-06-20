@@ -216,6 +216,8 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/leader`: organization application, organization maintenance, member approval, activity management, check-in and score submission
 - `/activities`: activity browsing
 - `/organizations`: organization browsing
+- `/mine`: personal registrations and score records
+- `/ai`: AI assistant placeholder
 
 ### Admin
 
@@ -223,6 +225,10 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/admin/students`: student list, account enable/disable, student detail, leader application approval
 - `/admin/organizations`: organization application approval and organization status management
 - `/admin/scores`: score audit and score rule maintenance
+- `/activities`: activity overview
+- `/organizations`: organization overview
+- `/mine`: personal registrations and score records
+- `/ai`: AI assistant placeholder
 
 ## Build Commands
 
@@ -283,4 +289,3 @@ For a step-by-step Chinese setup guide, see:
 ```text
 运行部署说明.md
 ```
-

@@ -5,6 +5,7 @@
         <span class="brand-mark"><School /></span>
         <span>智慧校园综测</span>
       </div>
+
       <el-menu :default-active="$route.path" router>
         <template v-if="auth.primaryRole === 'STUDENT'">
           <el-menu-item index="/home"><el-icon><House /></el-icon><span>学生首页</span></el-menu-item>
@@ -19,6 +20,8 @@
           <el-menu-item index="/leader"><el-icon><Management /></el-icon><span>组织负责人管理</span></el-menu-item>
           <el-menu-item index="/activities"><el-icon><Calendar /></el-icon><span>活动浏览</span></el-menu-item>
           <el-menu-item index="/organizations"><el-icon><OfficeBuilding /></el-icon><span>组织浏览</span></el-menu-item>
+          <el-menu-item index="/mine"><el-icon><TrendCharts /></el-icon><span>我的活动与积分</span></el-menu-item>
+          <el-menu-item index="/ai"><el-icon><ChatLineRound /></el-icon><span>AI 助手</span></el-menu-item>
         </template>
 
         <template v-else>
@@ -28,9 +31,12 @@
           <el-menu-item index="/admin/scores"><el-icon><Medal /></el-icon><span>积分审核</span></el-menu-item>
           <el-menu-item index="/activities"><el-icon><Calendar /></el-icon><span>活动总览</span></el-menu-item>
           <el-menu-item index="/organizations"><el-icon><OfficeBuilding /></el-icon><span>组织总览</span></el-menu-item>
+          <el-menu-item index="/mine"><el-icon><TrendCharts /></el-icon><span>我的活动与积分</span></el-menu-item>
+          <el-menu-item index="/ai"><el-icon><ChatLineRound /></el-icon><span>AI 助手</span></el-menu-item>
         </template>
       </el-menu>
     </aside>
+
     <main class="main">
       <header class="topbar">
         <div>
@@ -51,10 +57,23 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Calendar, ChatLineRound, Checked, House, Management, Medal, OfficeBuilding, School, SwitchButton, TrendCharts, User } from '@element-plus/icons-vue'
+import {
+  Calendar,
+  ChatLineRound,
+  Checked,
+  House,
+  Management,
+  Medal,
+  OfficeBuilding,
+  School,
+  SwitchButton,
+  TrendCharts,
+  User
+} from '@element-plus/icons-vue'
 import { useAuthStore } from '../stores/auth'
 
 defineProps({ title: String, subtitle: String })
+
 const auth = useAuthStore()
 const router = useRouter()
 
