@@ -88,7 +88,7 @@ async function login() {
   try {
     await auth.login(loginForm)
     ElMessage.success('登录成功')
-    router.push('/')
+    router.push(auth.homePath)
   } finally {
     loading.value = false
   }
@@ -99,7 +99,7 @@ async function register() {
   try {
     await auth.register(registerForm)
     ElMessage.success('注册成功')
-    router.push('/')
+    router.push(auth.homePath)
   } finally {
     loading.value = false
   }

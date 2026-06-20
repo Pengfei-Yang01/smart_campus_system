@@ -77,7 +77,7 @@ public class AuthController {
 
     private Map<String, Object> loginPayload(Map<String, Object> user) {
         @SuppressWarnings("unchecked")
-        Set<String> roles = new TreeSet<>((List<String>) user.get("roles"));
+        Set<String> roles = Set.of(resolvePrimaryRole(new TreeSet<>((List<String>) user.get("roles"))));
         CurrentUser current = new CurrentUser(
                 ((Number) user.get("user_id")).longValue(),
                 String.valueOf(user.get("username")),
@@ -85,5 +85,15 @@ public class AuthController {
                 roles
         );
         return Map.of("token", tokenService.create(current), "user", current);
+    }
+
+    private String resolvePrimaryRole(Set<String> roles) {
+        if (roles.contains("ADMIN")) {
+            return "ADMIN";
+        }
+        if (roles.contains("ORG_LEADER")) {
+            return "ORG_LEADER";
+        }
+        return "STUDENT";
     }
 }

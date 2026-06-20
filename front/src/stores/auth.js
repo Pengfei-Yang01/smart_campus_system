@@ -9,7 +9,21 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     roles: (state) => state.user?.roles || [],
     isAdmin: (state) => state.user?.roles?.includes('ADMIN'),
-    isLeader: (state) => state.user?.roles?.includes('ORG_LEADER')
+    isLeader: (state) => state.user?.roles?.includes('ORG_LEADER'),
+    primaryRole: (state) => {
+      const roles = state.user?.roles || []
+      if (roles.includes('ADMIN')) return 'ADMIN'
+      if (roles.includes('ORG_LEADER')) return 'ORG_LEADER'
+      return 'STUDENT'
+    },
+    homePath() {
+      if (this.primaryRole === 'ADMIN') return '/admin'
+      if (this.primaryRole === 'ORG_LEADER') return '/leader-home'
+      return '/home'
+    },
+    isStudentPrimary() {
+      return this.primaryRole === 'STUDENT'
+    }
   },
   actions: {
     async login(payload) {
