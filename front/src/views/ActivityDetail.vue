@@ -42,7 +42,7 @@ const detail = ref({})
 
 // 只有活动开放、当前用户尚未报名，且
 // 仍有剩余名额时才允许报名。
-const canRegister = computed(() => detail.value.activity_status === 'OPEN' && !detail.value.registered && Number(detail.value.registered_count || 0) < Number(detail.value.capacity || 0))
+const canRegister = computed(() => detail.value.org_status === 'ACTIVE' && detail.value.activity_status === 'OPEN' && !detail.value.registered && Number(detail.value.registered_count || 0) < Number(detail.value.capacity || 0))
 
 onMounted(load)
 

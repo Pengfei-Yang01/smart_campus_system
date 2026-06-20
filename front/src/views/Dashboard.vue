@@ -74,7 +74,7 @@
             <el-table-column prop="activity_status" label="状态" width="110" />
             <el-table-column label="操作" width="210" fixed="right">
               <template #default="{ row }">
-                <el-button size="small" :disabled="row.registered || row.activity_status !== 'OPEN'" @click.stop="registerActivity(row)">报名</el-button>
+                <el-button size="small" :disabled="row.registered || row.activity_status !== 'OPEN' || row.org_status !== 'ACTIVE'" @click.stop="registerActivity(row)">报名</el-button>
                 <el-button size="small" :disabled="!row.registered" @click.stop="cancelActivity(row)">取消</el-button>
               </template>
             </el-table-column>

@@ -11,6 +11,7 @@ import com.example.campus.enums.OrganizationStatus;
 import com.example.campus.security.CurrentUser;
 import com.example.campus.security.UserContext;
 import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -232,14 +233,48 @@ public class AdminController {
     }
 
     /**
-     * 修改组织生命周期状态。
+     * 修改组织生命周期状态。停用组织时，同步作废该组织活动并取消有效报名，
+     * 防止学生继续报名已停用组织下的活动。
      */
+    @Transactional
     @PatchMapping("/organizations/{id}/status")
     public ApiResponse<Object> orgStatus(@PathVariable Long id, @RequestBody OrganizationStatusRequest request) {
         requireAdmin();
         OrganizationStatus status = Db.require(request.orgStatus(), "orgStatus");
         db.jdbc().update("update organization set org_status=? where org_id=?", status.name(), id);
+        if (status == OrganizationStatus.DISABLED) {
+            disableOrganizationActivities(id);
+        }
         return ApiResponse.ok(Map.of("orgId", id, "orgStatus", status.name()));
+    }
+
+    /**
+     * 停用组织后，统一把组织下活动置为下架，并取消这些活动的有效报名。
+     * 这样即使前端缓存了旧活动信息，后端报名接口也不会继续接受报名。
+     */
+    private void disableOrganizationActivities(Long orgId) {
+        db.jdbc().update("""
+                update activity
+                set activity_status='OFFLINE'
+                where org_id=? and activity_status <> 'OFFLINE'
+                """, orgId);
+        db.jdbc().update("""
+                update registration r
+                join activity a on r.activity_id = a.activity_id
+                set r.registration_status='CANCELLED'
+                where a.org_id=? and r.registration_status='VALID'
+                """, orgId);
+        db.jdbc().update("""
+                update activity a
+                left join (
+                    select activity_id, count(*) valid_count
+                    from registration
+                    where registration_status='VALID'
+                    group by activity_id
+                ) rc on a.activity_id = rc.activity_id
+                set a.registered_count = coalesce(rc.valid_count, 0)
+                where a.org_id=?
+                """, orgId);
     }
 
     /**

@@ -73,7 +73,7 @@ public class ActivityController {
         // 列表查询会关联活动类型、组织和创建人姓名，
         // 前端渲染列表时不需要再额外请求这些名称。
         String sql = """
-                select a.*, t.type_name, o.org_name, u.real_name creator_name,
+                select a.*, t.type_name, o.org_name, o.org_status, u.real_name creator_name,
                        coalesce(a.base_score_override, sr.base_score) base_score,
                        exists(select 1 from registration r
                               where r.activity_id=a.activity_id and r.user_id=:currentUser
@@ -100,7 +100,7 @@ public class ActivityController {
     public ApiResponse<Object> detail(@PathVariable Long id) {
         CurrentUser user = UserContext.get();
         Map<String, Object> activity = db.one("""
-                select a.*, t.type_name, o.org_name, o.principal_user_id,
+                select a.*, t.type_name, o.org_name, o.org_status, o.principal_user_id,
                        coalesce(a.base_score_override, sr.base_score) base_score,
                        sr.normal_weight, sr.member_weight, sr.leader_weight,
                        exists(select 1 from registration r
@@ -127,6 +127,7 @@ public class ActivityController {
         Long typeId = Db.require(request.typeId(), "typeId");
         Long orgId = Db.require(request.orgId(), "orgId");
         ensureCanManageOrg(orgId);
+        requireActiveOrganization(orgId);
         Integer capacity = requirePositiveCapacity(request.capacity());
         LocalDateTime start = Db.dateTime(request.startTime(), "startTime");
         LocalDateTime end = Db.dateTime(request.endTime(), "endTime");
@@ -159,6 +160,7 @@ public class ActivityController {
         Long typeId = Db.require(request.typeId(), "typeId");
         Long orgId = Db.require(request.orgId(), "orgId");
         ensureCanManageOrg(orgId);
+        requireActiveOrganization(orgId);
         Integer capacity = requirePositiveCapacity(request.capacity());
         LocalDateTime start = Db.dateTime(request.startTime(), "startTime");
         LocalDateTime end = Db.dateTime(request.endTime(), "endTime");
@@ -182,7 +184,11 @@ public class ActivityController {
      */
     @PatchMapping("/{id}/status")
     public ApiResponse<Object> status(@PathVariable Long id, @RequestBody ActivityStatusRequest request) {
-        Map<String, Object> old = db.one("select * from activity where activity_id=?", id);
+        Map<String, Object> old = db.one("""
+                select a.*, o.org_status
+                from activity a join organization o on a.org_id = o.org_id
+                where a.activity_id=?
+                """, id);
         ensureCanManageOrg(((Number) old.get("org_id")).longValue());
 
         ActivityStatus current = ActivityStatus.valueOf(String.valueOf(old.get("activity_status")));
@@ -200,6 +206,9 @@ public class ActivityController {
         if (!allowed.contains(next)) {
             throw new BusinessException("当前活动状态不允许切换到目标状态");
         }
+        if (!"ACTIVE".equals(String.valueOf(old.get("org_status"))) && next != ActivityStatus.OFFLINE) {
+            throw new BusinessException("活动所属组织已停用，只能下架活动");
+        }
 
         db.jdbc().update("update activity set activity_status=? where activity_id=?", next.name(), id);
         return ApiResponse.ok(Map.of("activityId", id, "status", next.name()));
@@ -211,8 +220,15 @@ public class ActivityController {
     @PostMapping("/{id}/register")
     public ApiResponse<Object> register(@PathVariable Long id) {
         CurrentUser user = UserContext.get();
-        Map<String, Object> activity = db.one("select * from activity where activity_id=?", id);
+        Map<String, Object> activity = db.one("""
+                select a.*, o.org_status
+                from activity a join organization o on a.org_id = o.org_id
+                where a.activity_id=?
+                """, id);
 
+        if (!"ACTIVE".equals(String.valueOf(activity.get("org_status")))) {
+            throw new BusinessException("活动所属组织已停用，不能报名");
+        }
         if (!ActivityStatus.OPEN.name().equals(String.valueOf(activity.get("activity_status")))) {
             throw new BusinessException("活动未开放报名");
         }
@@ -372,6 +388,15 @@ public class ActivityController {
                 where org_id=? and principal_user_id=? and org_status='ACTIVE'
                 """, orgId, user.userId()) == 0) {
             throw new BusinessException("你只能管理自己负责的有效组织");
+        }
+    }
+
+    /**
+     * 发布或迁移活动时，所有角色都必须选择启用中的组织。
+     */
+    private void requireActiveOrganization(Long orgId) {
+        if (orgId == null || db.count("select count(*) from organization where org_id=? and org_status='ACTIVE'", orgId) == 0) {
+            throw new BusinessException("组织已停用，不能发布或更新活动");
         }
     }
 }
