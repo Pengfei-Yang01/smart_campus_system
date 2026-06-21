@@ -78,6 +78,11 @@ public class AdminController {
                 && !request.phone().matches("^\\d{11}$")) {
             throw new BusinessException("电话号码必须为11位数字");
         }
+        // 校验邮箱：仅允许合法邮箱格式
+        if (request.email() != null && !request.email().isBlank()
+                && !request.email().matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+            throw new BusinessException("邮箱格式不正确");
+        }
         db.jdbc().update("""
                 update user_account set real_name=?, phone=?, email=?, account_status=?
                 where user_id=?
