@@ -40,7 +40,9 @@
           <el-form-item label="账号状态">
             <el-select v-model="editForm.accountStatus" style="width: 100%"><el-option label="ENABLED" value="ENABLED" /><el-option label="DISABLED" value="DISABLED" /></el-select>
           </el-form-item>
-          <el-form-item label="电话"><el-input v-model="editForm.phone" /></el-form-item>
+          <el-form-item label="电话" :rules="phoneRules">
+            <el-input v-model="editForm.phone" maxlength="11" placeholder="请输入11位手机号" />
+          </el-form-item>
           <el-form-item label="邮箱"><el-input v-model="editForm.email" /></el-form-item>
           <el-form-item label="学院"><el-input v-model="editForm.college" /></el-form-item>
           <el-form-item label="专业"><el-input v-model="editForm.major" /></el-form-item>
@@ -85,6 +87,15 @@ const editId = ref(null)
 const detail = ref({})
 const filters = reactive({ keyword: '', accountStatus: '', applyStatus: '' })
 const editForm = reactive({ realName: '', accountStatus: 'ENABLED', phone: '', email: '', college: '', major: '', className: '', grade: '' })
+const phoneRules = [
+  { validator: (_rule, value, cb) => {
+    if (value && value.trim() && !/^\d{11}$/.test(value.trim())) {
+      cb(new Error('电话号码必须为11位数字'))
+    } else {
+      cb()
+    }
+  }, trigger: 'blur' }
+]
 
 // 按用户编号映射申请记录，方便表格行展示和审核每个学生的最新申请。
 const applyMap = computed(() => Object.fromEntries(applies.value.map((a) => [a.user_id, a])))
@@ -115,6 +126,11 @@ function openEdit(row) {
 
 // 保存选中学生的账号和资料修改。
 async function saveStudent() {
+  const phone = editForm.phone?.trim()
+  if (phone && !/^\d{11}$/.test(phone)) {
+    ElMessage.error('电话号码必须为11位数字')
+    return
+  }
   await http.patch(`/admin/students/${editId.value}`, editForm)
   ElMessage.success('学生信息已保存')
   editVisible.value = false

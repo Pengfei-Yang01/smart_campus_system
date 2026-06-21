@@ -73,6 +73,11 @@ public class AdminController {
     @PatchMapping("/students/{id}")
     public ApiResponse<Object> updateStudent(@PathVariable Long id, @RequestBody StudentUpdateRequest request) {
         requireAdmin();
+        // 校验手机号：仅允许11位数字
+        if (request.phone() != null && !request.phone().isBlank()
+                && !request.phone().matches("^\\d{11}$")) {
+            throw new BusinessException("电话号码必须为11位数字");
+        }
         db.jdbc().update("""
                 update user_account set real_name=?, phone=?, email=?, account_status=?
                 where user_id=?
