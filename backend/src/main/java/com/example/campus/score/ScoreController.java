@@ -60,14 +60,16 @@ public class ScoreController {
     /**
      * 查询当前用户积分统计
      */
+
     @GetMapping("/summary")
     public ApiResponse<Object> summary() {
         CurrentUser user = UserContext.get();
 
         Map<String, Object> result = db.one("""
             select
-                count(*) as totalRecords,
-                coalesce(sum(final_score),0) as totalScore
+            count(*) as totalRecords,
+            coalesce(sum(final_score),0) as totalScore,
+            coalesce(avg(final_score),0) as averageScore
             from score_record
             where user_id = ?
             and audit_status = 'APPROVED'
@@ -75,6 +77,7 @@ public class ScoreController {
 
         return ApiResponse.ok(result);
     }
+
     /**
      * 查询积分详情
      */
