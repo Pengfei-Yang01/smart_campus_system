@@ -183,7 +183,9 @@ public class ActivityController {
                 Db.ts(start), Db.ts(end), Db.require(request.location(), "location"), Db.ts(deadline),
                 capacity, request.description(), request.requirement(),
                 request.baseScore(), resolveRuleId(typeId, request.ruleId()), id);
-        return ApiResponse.ok(Map.of("activityId", id));
+        return ApiResponse.ok(Map.of(
+        "activityId", id,
+        "status", status.name()));
     }
 
     /**
