@@ -185,7 +185,7 @@ public class ActivityController {
                 request.baseScore(), resolveRuleId(typeId, request.ruleId()), id);
         return ApiResponse.ok(Map.of(
         "activityId", id,
-        "status", status.name()));
+        "status", String.valueOf(old.get("activity_status"))));
     }
 
     /**
