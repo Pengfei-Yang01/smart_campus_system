@@ -76,6 +76,19 @@ public class ScoreController {
         return ApiResponse.ok(result);
     }
     /**
+     * 查询积分详情
+     */
+    @GetMapping("/{id}")
+    public ApiResponse<Object> detail(@PathVariable Long id) {
+        return ApiResponse.ok(
+                db.one("""
+                    select *
+                    from score_record
+                    where score_id = ?
+                    """, id)
+        );
+    }
+    /**
      * 活动结束后为学生录入积分。
      */
     @PostMapping
