@@ -57,7 +57,24 @@ public class ScoreController {
         Object[] studentArgs = status == null ? new Object[]{user.userId()} : new Object[]{user.userId(), status.name()};
         return ApiResponse.ok(db.jdbc().queryForList(scoreSql("where sr.user_id = ?" + condition), studentArgs));
     }
+    /**
+     * 查询当前用户积分统计
+     */
+    @GetMapping("/summary")
+    public ApiResponse<Object> summary() {
+        CurrentUser user = UserContext.get();
 
+        Map<String, Object> result = db.one("""
+            select
+                count(*) as totalRecords,
+                coalesce(sum(final_score),0) as totalScore
+            from score_record
+            where user_id = ?
+            and audit_status = 'APPROVED'
+            """, user.userId());
+
+        return ApiResponse.ok(result);
+    }
     /**
      * 活动结束后为学生录入积分。
      */
