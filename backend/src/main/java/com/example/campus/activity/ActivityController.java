@@ -98,6 +98,13 @@ public class ActivityController {
      */
     @GetMapping("/{id}")
     public ApiResponse<Object> detail(@PathVariable Long id) {
+        if (db.count("""
+        select count(*)
+        from activity
+        where activity_id = ?
+        """, id) == 0) {
+        throw new BusinessException("活动不存在");
+        }
         CurrentUser user = UserContext.get();
         Map<String, Object> activity = db.one("""
                 select a.*, t.type_name, o.org_name, o.org_status, o.principal_user_id,
