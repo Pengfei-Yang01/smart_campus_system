@@ -80,13 +80,20 @@ public class ScoreController {
      */
     @GetMapping("/{id}")
     public ApiResponse<Object> detail(@PathVariable Long id) {
-        return ApiResponse.ok(
-                db.one("""
-                    select *
-                    from score_record
-                    where score_id = ?
-                    """, id)
-        );
+    return ApiResponse.ok(
+            db.one("""
+                select sr.*,
+                       u.real_name,
+                       u.student_no,
+                       a.activity_name,
+                       o.org_name
+                from score_record sr
+                join user_account u on sr.user_id = u.user_id
+                join activity a on sr.activity_id = a.activity_id
+                join organization o on a.org_id = o.org_id
+                where sr.score_id = ?
+                """, id)
+    );
     }
     /**
      * 查询所有积分规则
