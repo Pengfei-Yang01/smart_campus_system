@@ -89,6 +89,21 @@ public class ScoreController {
         );
     }
     /**
+     * 查询所有积分规则
+     */
+    @GetMapping("/rules")
+    public ApiResponse<Object> listRules() {
+        return ApiResponse.ok(
+                db.jdbc().queryForList("""
+                        select *
+                        from score_rule
+                        order by rule_id
+                        """)
+        );
+    }
+    
+    
+    /**
      * 活动结束后为学生录入积分。
      */
     @PostMapping
