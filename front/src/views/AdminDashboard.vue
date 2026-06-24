@@ -15,6 +15,7 @@
         <div class="detail-list">
           <div><span>负责人申请</span><b>{{ stats.pendingLeaderApplyCount || 0 }}</b></div>
           <div><span>组织成立申请</span><b>{{ stats.pendingOrgApplyCount || 0 }}</b></div>
+          <div><span>事务申请</span><b>{{ stats.pendingAffairCount || 0 }}</b></div>
           <div><span>积分记录</span><b>{{ stats.pendingScoreCount || 0 }}</b></div>
           <div><span>报名中活动</span><b>{{ stats.openActivityCount || 0 }}</b></div>
         </div>
@@ -22,6 +23,7 @@
         <div class="table-actions">
           <el-button type="primary" @click="$router.push('/admin/students')">处理学生与负责人申请</el-button>
           <el-button @click="$router.push('/admin/organizations')">处理组织申请</el-button>
+          <el-button @click="$router.push('/affairs')">处理事务申请</el-button>
           <el-button @click="$router.push('/admin/scores')">处理积分审核</el-button>
         </div>
       </section>
@@ -50,7 +52,12 @@ const stats = ref({})
 const recentActivities = ref([])
 
 // 仪表盘指标卡中展示的待处理总数。
-const pendingTotal = computed(() => Number(stats.value.pendingLeaderApplyCount || 0) + Number(stats.value.pendingOrgApplyCount || 0) + Number(stats.value.pendingScoreCount || 0))
+const pendingTotal = computed(() =>
+  Number(stats.value.pendingLeaderApplyCount || 0)
+  + Number(stats.value.pendingOrgApplyCount || 0)
+  + Number(stats.value.pendingScoreCount || 0)
+  + Number(stats.value.pendingAffairCount || 0)
+)
 
 // 为仪表盘加载统计数据和近期活动列表。
 onMounted(async () => {

@@ -2,6 +2,7 @@ backend/target/
 front/node_modules/
 front/dist/
 _extracted_docs/
+.run_logs/
 *.log
 .idea/
 .vscode/

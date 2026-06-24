@@ -1,6 +1,6 @@
 # Smart Campus Activity Management System
 
-智慧校园综测服务与活动管理系统是一个前后端分离的校园活动管理项目，覆盖学生报名、组织管理、活动发布、成员审批、签到、综测积分录入与审核等流程。系统按角色划分学生端、组织负责人端和管理员端，并根据主角色进入不同首页。
+智慧校园综测服务与活动管理系统是一个前后端分离的校园活动管理项目，覆盖学生报名、组织管理、活动发布、成员审批、签到、综测积分录入与审核、学生事务申请、消息通知、活动评价反馈等流程。系统按角色划分学生端、组织负责人端和管理员端，并根据主角色进入不同首页。
 
 > AI 问答模块当前按课程要求暂不接入大模型，仅保留页面占位和 `ai_qa_record` 数据表。
 
@@ -10,6 +10,9 @@
 - 普通学生首页、活动中心、活动详情、组织中心、组织详情、我的活动与积分
 - 组织负责人首页、组织信息维护、组织成立申请、成员加入审批、活动发布与状态维护、报名名单、签到、录分
 - 管理员首页、学生管理、组织成立审批、组织状态管理、积分审核、积分规则维护
+- 学生事务申请：学生申请桌椅、宣传位、物资，组织负责人可额外申请教室和场地，管理员审批
+- 消息通知中心：审批结果、系统公告、评价回复和待处理提醒按角色进入个人收件箱
+- 活动评价反馈：已签到参与者评价活动，组织负责人管理和回复评价，管理员可全局管理
 - MySQL 初始化脚本，包含建表语句和演示数据
 - 按主角色隔离首页与导航，避免管理员、负责人、学生权限混淆
 
@@ -207,6 +210,9 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/activities/:id`: activity detail, registration and cancellation
 - `/organizations`: organization list
 - `/organizations/:id`: organization detail and join application
+- `/affairs`: student affairs application and approval progress
+- `/messages`: personal message center
+- `/feedbacks`: activity feedback submission and browsing
 - `/mine`: personal registrations and score records
 - `/ai`: AI assistant placeholder
 
@@ -216,6 +222,9 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/leader`: organization application, organization maintenance, member approval, activity management, check-in and score submission
 - `/activities`: activity browsing
 - `/organizations`: organization browsing
+- `/affairs`: affairs application, including classroom and venue resources for managed organizations
+- `/messages`: personal message center
+- `/feedbacks`: activity feedback management and reply
 - `/mine`: personal registrations and score records
 - `/ai`: AI assistant placeholder
 
@@ -227,6 +236,9 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/admin/scores`: score audit and score rule maintenance
 - `/activities`: activity overview
 - `/organizations`: organization overview
+- `/affairs`: affairs approval
+- `/messages`: message center and notice publishing
+- `/feedbacks`: global activity feedback management
 - `/mine`: personal registrations and score records
 - `/ai`: AI assistant placeholder
 

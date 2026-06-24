@@ -27,6 +27,21 @@
       <h3>活动要求与报名限制</h3>
       <p>{{ detail.requirement || '暂无要求' }}</p>
     </section>
+
+    <section class="panel" style="margin-top: 16px">
+      <div class="table-actions">
+        <h2 class="section-title">活动评价</h2>
+        <el-button text type="primary" @click="$router.push('/feedbacks')">进入评价反馈</el-button>
+      </div>
+      <el-table :data="feedbacks" height="260">
+        <el-table-column prop="display_name" label="评价人" width="120" />
+        <el-table-column label="评分" width="150">
+          <template #default="{ row }"><el-rate :model-value="Number(row.rating)" disabled /></template>
+        </el-table-column>
+        <el-table-column prop="content" label="评价内容" min-width="220" />
+        <el-table-column prop="reply_content" label="组织回复" min-width="220" />
+      </el-table>
+    </section>
   </AppLayout>
 </template>
 
@@ -39,6 +54,7 @@ import http from '../api/http'
 
 const route = useRoute()
 const detail = ref({})
+const feedbacks = ref([])
 
 // 只有活动开放、当前用户尚未报名，且
 // 仍有剩余名额时才允许报名。
@@ -48,7 +64,12 @@ onMounted(load)
 
 // 根据路由编号加载详情。
 async function load() {
-  detail.value = await http.get(`/activities/${route.params.id}`)
+  const [activityDetail, feedbackRows] = await Promise.all([
+    http.get(`/activities/${route.params.id}`),
+    http.get(`/activities/${route.params.id}/feedbacks`)
+  ])
+  detail.value = activityDetail
+  feedbacks.value = feedbackRows
 }
 
 // 为当前用户报名，然后重新加载详情以更新按钮状态和人数。

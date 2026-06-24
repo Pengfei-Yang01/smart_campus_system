@@ -2,6 +2,12 @@ create database if not exists smart_campus default character set utf8mb4 collate
 use smart_campus;
 
 set foreign_key_checks = 0;
+drop table if exists user_message;
+drop table if exists notice;
+drop table if exists activity_feedback;
+drop table if exists affair_application;
+drop table if exists campus_resource;
+drop table if exists affair_type;
 drop table if exists ai_qa_record;
 drop table if exists score_record;
 drop table if exists registration;
@@ -116,6 +122,58 @@ create table organization_member (
   constraint fk_org_member_user foreign key (user_id) references user_account(user_id)
 ) engine=InnoDB default charset=utf8mb4;
 
+create table affair_type (
+  type_id bigint primary key auto_increment,
+  type_code varchar(32) not null unique,
+  type_name varchar(80) not null,
+  applicant_scope enum('ALL','ORG_LEADER') not null default 'ALL',
+  requires_resource tinyint(1) not null default 0,
+  enabled_status enum('ENABLED','DISABLED') not null default 'ENABLED',
+  sort_order int not null default 100,
+  description varchar(300)
+) engine=InnoDB default charset=utf8mb4;
+
+create table campus_resource (
+  resource_id bigint primary key auto_increment,
+  type_id bigint not null,
+  resource_name varchar(120) not null,
+  resource_location varchar(150),
+  capacity int,
+  resource_status enum('ENABLED','DISABLED') not null default 'ENABLED',
+  description varchar(300),
+  index idx_campus_resource_type_status(type_id, resource_status),
+  constraint fk_campus_resource_type foreign key (type_id) references affair_type(type_id)
+) engine=InnoDB default charset=utf8mb4;
+
+create table affair_application (
+  affair_id bigint primary key auto_increment,
+  applicant_id bigint not null,
+  applicant_role enum('STUDENT','ORG_LEADER') not null,
+  org_id bigint,
+  type_id bigint not null,
+  resource_id bigint,
+  title varchar(120) not null,
+  apply_reason varchar(600) not null,
+  expected_start datetime not null,
+  expected_end datetime not null,
+  quantity int not null default 1 check (quantity > 0),
+  contact varchar(100),
+  status enum('PENDING','APPROVED','REJECTED','CANCELLED') not null default 'PENDING',
+  reviewer_id bigint,
+  reject_reason varchar(300),
+  review_remark varchar(500),
+  applied_at datetime not null default current_timestamp,
+  reviewed_at datetime,
+  check (expected_end > expected_start),
+  index idx_affair_status_time(status, expected_start),
+  index idx_affair_applicant_status(applicant_id, status),
+  constraint fk_affair_applicant foreign key (applicant_id) references user_account(user_id),
+  constraint fk_affair_org foreign key (org_id) references organization(org_id),
+  constraint fk_affair_type foreign key (type_id) references affair_type(type_id),
+  constraint fk_affair_resource foreign key (resource_id) references campus_resource(resource_id),
+  constraint fk_affair_reviewer foreign key (reviewer_id) references user_account(user_id)
+) engine=InnoDB default charset=utf8mb4;
+
 create table activity_type (
   type_id bigint primary key auto_increment,
   type_code varchar(32) not null unique,
@@ -177,6 +235,26 @@ create table registration (
   constraint fk_registration_user foreign key (user_id) references user_account(user_id)
 ) engine=InnoDB default charset=utf8mb4;
 
+create table activity_feedback (
+  feedback_id bigint primary key auto_increment,
+  activity_id bigint not null,
+  user_id bigint not null,
+  rating int not null check (rating between 1 and 5),
+  content varchar(800) not null,
+  anonymous tinyint(1) not null default 0,
+  feedback_status enum('VISIBLE','HIDDEN') not null default 'VISIBLE',
+  reply_content varchar(800),
+  replied_by bigint,
+  replied_at datetime,
+  created_at datetime not null default current_timestamp,
+  updated_at datetime not null default current_timestamp on update current_timestamp,
+  unique key uk_feedback_activity_user(activity_id, user_id),
+  index idx_feedback_activity_status(activity_id, feedback_status),
+  constraint fk_feedback_activity foreign key (activity_id) references activity(activity_id),
+  constraint fk_feedback_user foreign key (user_id) references user_account(user_id),
+  constraint fk_feedback_replier foreign key (replied_by) references user_account(user_id)
+) engine=InnoDB default charset=utf8mb4;
+
 create table score_record (
   score_id bigint primary key auto_increment,
   user_id bigint not null,
@@ -212,6 +290,35 @@ create table ai_qa_record (
   called_at datetime not null default current_timestamp,
   index idx_ai_qa_user_time(user_id, called_at),
   constraint fk_ai_qa_user foreign key (user_id) references user_account(user_id)
+) engine=InnoDB default charset=utf8mb4;
+
+create table notice (
+  notice_id bigint primary key auto_increment,
+  title varchar(120) not null,
+  content varchar(1200) not null,
+  target_role enum('ALL','STUDENT','ORG_LEADER','ADMIN') not null default 'ALL',
+  priority enum('NORMAL','IMPORTANT') not null default 'NORMAL',
+  publisher_id bigint not null,
+  notice_status enum('PUBLISHED','DISABLED') not null default 'PUBLISHED',
+  published_at datetime not null default current_timestamp,
+  index idx_notice_target_status(target_role, notice_status),
+  constraint fk_notice_publisher foreign key (publisher_id) references user_account(user_id)
+) engine=InnoDB default charset=utf8mb4;
+
+create table user_message (
+  message_id bigint primary key auto_increment,
+  recipient_id bigint not null,
+  title varchar(120) not null,
+  content varchar(1200) not null,
+  category enum('SYSTEM','NOTICE','AUDIT','AFFAIR','FEEDBACK') not null default 'SYSTEM',
+  source_type varchar(50),
+  source_id bigint,
+  source_notice_id bigint,
+  read_at datetime,
+  created_at datetime not null default current_timestamp,
+  index idx_user_message_recipient_read(recipient_id, read_at, created_at),
+  constraint fk_user_message_recipient foreign key (recipient_id) references user_account(user_id),
+  constraint fk_user_message_notice foreign key (source_notice_id) references notice(notice_id)
 ) engine=InnoDB default charset=utf8mb4;
 
 insert into role(role_code, role_name, description) values
@@ -261,6 +368,34 @@ insert into organization_member(org_id, user_id, member_role, join_status, apply
 insert into organization_apply(applicant_id, org_name, org_type, description, apply_reason, contact, status) values
 (4, 'AI 学习小组', 'CLUB', '围绕机器学习与大模型实践开展交流。', '补充校园 AI 学习活动供给。', 'ai-club@campus.local', 'PENDING');
 
+insert into affair_type(type_code, type_name, applicant_scope, requires_resource, sort_order, description) values
+('DESK_CHAIR', '桌椅借用', 'ALL', 0, 10, '学生或负责人申请临时桌椅，用于班级、社团或个人学习服务场景。'),
+('POSTER_SPACE', '海报张贴位', 'ALL', 1, 20, '申请校内宣传栏或活动海报张贴位置。'),
+('EQUIPMENT', '活动物资借用', 'ALL', 0, 30, '申请音箱、展架、插线板等常规活动物资。'),
+('CLASSROOM', '教室借用', 'ORG_LEADER', 1, 40, '组织负责人为组织活动申请教室。'),
+('AUDITORIUM', '报告厅/场地借用', 'ORG_LEADER', 1, 50, '组织负责人申请报告厅、礼堂等大型活动场地。');
+
+insert into campus_resource(type_id, resource_name, resource_location, capacity, description) values
+(2, '一号宣传栏', '教学楼A座一层大厅', 12, '适合张贴社团招新、讲座预告等海报。'),
+(2, '图书馆入口展板区', '图书馆南门', 8, '人流量较大，需保持版面整洁。'),
+(3, '便携音箱套装', '团委物资室', 6, '包含音箱、无线麦克风和基础连接线。'),
+(3, '移动展架', '大学生活动中心一层仓库', 20, '适合活动签到、成果展示和海报陈列。'),
+(3, '插线板套装', '后勤服务中心', 15, '适合培训、路演等临时用电场景。'),
+(4, '教学楼B203', '教学楼B座二层', 60, '多媒体教室，适合培训和讲座。'),
+(4, '实验楼C401', '实验楼C座四层', 40, '机房教室，适合编程训练。'),
+(5, '大学生活动中心报告厅', '大学生活动中心二层', 180, '适合校级讲座、路演和大型宣讲。');
+
+insert into affair_application(applicant_id, applicant_role, org_id, type_id, resource_id, title, apply_reason,
+    expected_start, expected_end, quantity, contact, status, reviewer_id, review_remark, reviewed_at) values
+(2, 'STUDENT', null, 1, null, '班级学习分享桌椅借用', '班级开展学习经验分享会，需要临时借用桌椅。', '2026-07-02 18:00:00', '2026-07-02 21:00:00', 8, 'student1@campus.local', 'PENDING', null, null, null),
+(3, 'STUDENT', null, 2, 1, '志愿服务海报张贴申请', '为校园环保志愿服务活动张贴宣传海报。', '2026-07-04 09:00:00', '2026-07-08 18:00:00', 2, 'student2@campus.local', 'APPROVED', 1, '同意在指定展板张贴，请活动结束后及时撤下。', now()),
+(4, 'ORG_LEADER', 1, 4, 6, '软件创新协会培训教室申请', '用于开展 Spring Boot 项目实战培训。', '2026-07-06 14:00:00', '2026-07-06 17:00:00', 1, 'leader1@campus.local', 'APPROVED', 1, '请提前 20 分钟到物业办公室领取钥匙。', now()),
+(5, 'ORG_LEADER', 2, 5, 8, '志愿者服务队报告厅申请', '用于举办暑期志愿服务项目说明会。', '2026-07-15 19:00:00', '2026-07-15 21:00:00', 1, 'leader2@campus.local', 'PENDING', null, null, null);
+
+insert into affair_application(applicant_id, applicant_role, org_id, type_id, resource_id, title, apply_reason,
+    expected_start, expected_end, quantity, contact, status, reviewer_id, reject_reason, reviewed_at) values
+(2, 'STUDENT', null, 3, null, '活动物资临时借用', '个人学习小组临时需要借用较多物资，但未说明保管人。', '2026-07-09 13:00:00', '2026-07-09 18:00:00', 3, 'student1@campus.local', 'REJECTED', 1, '请补充物资清单和保管负责人后重新提交。', now());
+
 insert into activity_type(type_code, type_name) values
 ('LECTURE', '学术讲座'),
 ('VOLUNTEER', '志愿服务'),
@@ -290,6 +425,11 @@ insert into registration(activity_id, user_id, registration_status, checkin_stat
 (4, 3, 'VALID', 'CHECKED'),
 (5, 3, 'VALID', 'CHECKED');
 
+insert into activity_feedback(activity_id, user_id, rating, content, anonymous, reply_content, replied_by, replied_at) values
+(4, 2, 5, '训练内容很扎实，希望后续增加题解复盘环节。', 0, '感谢建议，下一期会加入复盘安排。', 4, now()),
+(4, 3, 4, '活动节奏紧凑，签到流程顺畅，建议增加更多实操时间。', 1, null, null, null),
+(5, 3, 4, '现场秩序维护安排清晰，签到流程还可以再快一点。', 1, null, null, null);
+
 insert into score_record(user_id, activity_id, rule_id, identity_type, base_score, identity_weight, final_score, audit_status, submitter_id, reviewer_id, reviewed_at) values
 (2, 4, 3, 'ORG_MEMBER', 3.00, 1.20, 3.60, 'APPROVED', 4, 1, now()),
 (3, 4, 3, 'NORMAL', 3.00, 1.00, 3.00, 'PENDING', 4, null, null),
@@ -297,3 +437,25 @@ insert into score_record(user_id, activity_id, rule_id, identity_type, base_scor
 
 insert into ai_qa_record(user_id, question, answer, model_name, cost_ms) values
 (2, '最近有哪些活动可以报名？', 'AI 问答模块暂未启用，请在活动中心查看可报名活动。', 'not-enabled', 0);
+
+insert into notice(title, content, target_role, priority, publisher_id) values
+('校园活动管理系统新增功能上线', '学生事务申请、消息通知中心和活动评价反馈模块已开放使用，请根据角色进入对应页面处理。', 'ALL', 'IMPORTANT', 1),
+('事务申请审批规范提醒', '提交教室和场地申请时，请完整填写使用时间、组织名称、活动用途和联系方式。', 'ORG_LEADER', 'NORMAL', 1),
+('活动评价反馈功能开放', '已签到且已结束的活动可以在评价反馈页面提交评分和文字建议，组织负责人会及时查看回复。', 'STUDENT', 'NORMAL', 1);
+
+insert into user_message(recipient_id, title, content, category, source_type, source_id, source_notice_id)
+select user_id, '校园活动管理系统新增功能上线', '学生事务申请、消息通知中心和活动评价反馈模块已开放使用，请根据角色进入对应页面处理。', 'NOTICE', 'NOTICE', 1, 1
+from user_account
+where account_status='ENABLED';
+
+insert into user_message(recipient_id, title, content, category, source_type, source_id, source_notice_id) values
+(2, '你的事务申请待审批', '班级学习分享桌椅借用申请已提交，请等待管理员审批。', 'AFFAIR', 'AFFAIR_APPLICATION', 1, null),
+(3, '海报张贴申请已通过', '志愿服务海报张贴申请已通过，请按审批说明使用宣传栏。', 'AUDIT', 'AFFAIR_APPLICATION', 2, null),
+(4, '事务申请已通过', '软件创新协会培训教室申请已通过，请按审批说明使用教室。', 'AUDIT', 'AFFAIR_APPLICATION', 3, null),
+(5, '事务申请待审批', '志愿者服务队报告厅申请已提交，请等待管理员审批。', 'AFFAIR', 'AFFAIR_APPLICATION', 4, null),
+(2, '活动物资申请已驳回', '活动物资临时借用申请被驳回：请补充物资清单和保管负责人后重新提交。', 'AUDIT', 'AFFAIR_APPLICATION', 5, null),
+(4, '收到新的活动评价', '学生对算法训练营阶段赛提交了评价，请及时查看反馈。', 'FEEDBACK', 'ACTIVITY_FEEDBACK', 1, null),
+(4, '事务申请审批规范提醒', '提交教室和场地申请时，请完整填写使用时间、组织名称、活动用途和联系方式。', 'NOTICE', 'NOTICE', 2, 2),
+(5, '事务申请审批规范提醒', '提交教室和场地申请时，请完整填写使用时间、组织名称、活动用途和联系方式。', 'NOTICE', 'NOTICE', 2, 2),
+(2, '活动评价反馈功能开放', '已签到且已结束的活动可以在评价反馈页面提交评分和文字建议，组织负责人会及时查看回复。', 'NOTICE', 'NOTICE', 3, 3),
+(3, '活动评价反馈功能开放', '已签到且已结束的活动可以在评价反馈页面提交评分和文字建议，组织负责人会及时查看回复。', 'NOTICE', 'NOTICE', 3, 3);

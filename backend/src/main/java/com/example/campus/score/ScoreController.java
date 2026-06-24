@@ -8,6 +8,8 @@ import com.example.campus.dto.ScoreRequests.ScoreRecordRequest;
 import com.example.campus.dto.ScoreRequests.ScoreRuleRequest;
 import com.example.campus.enums.AuditStatus;
 import com.example.campus.enums.EffectiveStatus;
+import com.example.campus.enums.MessageCategory;
+import com.example.campus.message.MessageService;
 import com.example.campus.security.CurrentUser;
 import com.example.campus.security.UserContext;
 import java.util.Map;
@@ -28,12 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/scores")
 public class ScoreController {
     private final Db db;
+    private final MessageService messageService;
 
     /**
-     * 注入积分模块使用的数据库工具类。
+     * 注入积分模块使用的数据库工具类和消息服务。
      */
-    public ScoreController(Db db) {
+    public ScoreController(Db db, MessageService messageService) {
         this.db = db;
+        this.messageService = messageService;
     }
 
     /**
@@ -181,11 +185,30 @@ public class ScoreController {
         if (status != AuditStatus.APPROVED && status != AuditStatus.REJECTED) {
             throw new BusinessException("积分审核状态只能是 APPROVED 或 REJECTED");
         }
+        Map<String, Object> score = db.one("""
+                select sr.*, a.activity_name
+                from score_record sr
+                join activity a on sr.activity_id = a.activity_id
+                where sr.score_id=?
+                """, id);
+        if (!AuditStatus.PENDING.name().equals(String.valueOf(score.get("audit_status")))) {
+            throw new BusinessException("只有待审核积分记录可以审批");
+        }
 
         db.jdbc().update("""
                 update score_record set audit_status=?, reviewer_id=?, reject_reason=?, reviewed_at=now()
                 where score_id=?
                 """, status.name(), user.userId(), request.rejectReason(), id);
+        messageService.notifyUser(
+                ((Number) score.get("user_id")).longValue(),
+                status == AuditStatus.APPROVED ? "活动积分审核通过" : "活动积分审核驳回",
+                status == AuditStatus.APPROVED
+                        ? "你在活动“" + score.get("activity_name") + "”中的积分已审核通过。"
+                        : "你在活动“" + score.get("activity_name") + "”中的积分未通过：" + (request.rejectReason() == null ? "未填写原因" : request.rejectReason()),
+                MessageCategory.AUDIT,
+                "SCORE_RECORD",
+                id
+        );
         return ApiResponse.ok(Map.of("scoreId", id, "auditStatus", status.name()));
     }
 

@@ -7,7 +7,9 @@ import com.example.campus.dto.AdminRequests.AuditRequest;
 import com.example.campus.dto.AdminRequests.OrganizationStatusRequest;
 import com.example.campus.dto.StudentRequests.StudentUpdateRequest;
 import com.example.campus.enums.AuditStatus;
+import com.example.campus.enums.MessageCategory;
 import com.example.campus.enums.OrganizationStatus;
+import com.example.campus.message.MessageService;
 import com.example.campus.security.CurrentUser;
 import com.example.campus.security.UserContext;
 import java.util.Map;
@@ -27,12 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin")
 public class AdminController {
     private final Db db;
+    private final MessageService messageService;
 
     /**
-     * 注入管理员模块使用的数据库工具类。
+     * 注入管理员模块使用的数据库工具类和消息服务。
      */
-    public AdminController(Db db) {
+    public AdminController(Db db, MessageService messageService) {
         this.db = db;
+        this.messageService = messageService;
     }
 
     /**
@@ -48,7 +52,8 @@ public class AdminController {
                 "organizationCount", db.count("select count(*) from organization"),
                 "pendingLeaderApplyCount", db.count("select count(*) from leader_apply where status='PENDING'"),
                 "pendingOrgApplyCount", db.count("select count(*) from organization_apply where status='PENDING'"),
-                "pendingScoreCount", db.count("select count(*) from score_record where audit_status='PENDING'")
+                "pendingScoreCount", db.count("select count(*) from score_record where audit_status='PENDING'"),
+                "pendingAffairCount", db.count("select count(*) from affair_application where status='PENDING'")
         ));
     }
 
@@ -165,6 +170,9 @@ public class AdminController {
         AuditStatus status = Db.require(request.status(), "status");
         ensureAuditDecision(status);
         Map<String, Object> apply = db.one("select * from leader_apply where apply_id=?", id);
+        if (!AuditStatus.PENDING.name().equals(String.valueOf(apply.get("status")))) {
+            throw new BusinessException("只有待审核负责人申请可以审批");
+        }
 
         db.jdbc().update("""
                 update leader_apply set status=?, reviewer_id=?, reject_reason=?, reviewed_at=now()
@@ -179,6 +187,16 @@ public class AdminController {
                     select ?, role_id from role where role_code='ORG_LEADER'
                     """, apply.get("user_id"));
         }
+        messageService.notifyUser(
+                ((Number) apply.get("user_id")).longValue(),
+                status == AuditStatus.APPROVED ? "组织负责人申请已通过" : "组织负责人申请已驳回",
+                status == AuditStatus.APPROVED
+                        ? "你的组织负责人申请已通过，重新登录后可进入负责人首页。"
+                        : "你的组织负责人申请未通过：" + (request.rejectReason() == null ? "未填写原因" : request.rejectReason()),
+                MessageCategory.AUDIT,
+                "LEADER_APPLY",
+                id
+        );
         return ApiResponse.ok(Map.of("applyId", id, "status", status.name()));
     }
 
@@ -207,6 +225,9 @@ public class AdminController {
         AuditStatus status = Db.require(request.status(), "status");
         ensureAuditDecision(status);
         Map<String, Object> apply = db.one("select * from organization_apply where org_apply_id=?", id);
+        if (!AuditStatus.PENDING.name().equals(String.valueOf(apply.get("status")))) {
+            throw new BusinessException("只有待审核组织申请可以审批");
+        }
 
         db.jdbc().update("""
                 update organization_apply set status=?, reviewer_id=?, reject_reason=?, reviewed_at=now()
@@ -226,6 +247,16 @@ public class AdminController {
                     values(?, ?, 'LEADER', 'APPROVED')
                     """, orgId, apply.get("applicant_id"));
         }
+        messageService.notifyUser(
+                ((Number) apply.get("applicant_id")).longValue(),
+                status == AuditStatus.APPROVED ? "组织成立申请已通过" : "组织成立申请已驳回",
+                status == AuditStatus.APPROVED
+                        ? "你申请成立的组织“" + apply.get("org_name") + "”已通过审核。"
+                        : "你申请成立的组织“" + apply.get("org_name") + "”未通过：" + (request.rejectReason() == null ? "未填写原因" : request.rejectReason()),
+                MessageCategory.AUDIT,
+                "ORGANIZATION_APPLY",
+                id
+        );
         return ApiResponse.ok(Map.of("orgApplyId", id, "status", status.name()));
     }
 

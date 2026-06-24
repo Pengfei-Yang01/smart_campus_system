@@ -126,6 +126,8 @@ class ScoreControllerTest {
     /** 管理员可以审核积分记录，审核结果会返回给前端。 */
     @Test
     @Sql(scripts = "/test-data/reset.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(statements = "update score_record set audit_status='PENDING', reviewer_id=null, reviewed_at=null where score_id=1",
+            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     void audit_管理员审核积分记录() {
         var token = loginAs("admin");
         var resp = patch("/api/scores/1/audit",

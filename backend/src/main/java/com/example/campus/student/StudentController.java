@@ -4,6 +4,9 @@ import com.example.campus.common.ApiResponse;
 import com.example.campus.common.BusinessException;
 import com.example.campus.common.Db;
 import com.example.campus.dto.StudentRequests.LeaderApplyRequest;
+import com.example.campus.enums.MessageCategory;
+import com.example.campus.enums.NoticeTargetRole;
+import com.example.campus.message.MessageService;
 import com.example.campus.security.CurrentUser;
 import com.example.campus.security.UserContext;
 import java.util.Map;
@@ -20,12 +23,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class StudentController {
     private final Db db;
+    private final MessageService messageService;
 
     /**
-     * 注入学生端接口使用的数据库工具类。
+     * 注入学生端接口使用的数据库工具类和消息服务。
      */
-    public StudentController(Db db) {
+    public StudentController(Db db, MessageService messageService) {
         this.db = db;
+        this.messageService = messageService;
     }
 
     /**
@@ -72,6 +77,14 @@ public class StudentController {
                 insert into leader_apply(user_id, apply_reason, contact, experience)
                 values(?, ?, ?, ?)
                 """, user.userId(), Db.require(request.applyReason(), "applyReason"), request.contact(), request.experience());
+        messageService.notifyRole(
+                NoticeTargetRole.ADMIN,
+                "新的组织负责人申请待审批",
+                user.realName() + " 提交了组织负责人申请。",
+                MessageCategory.AUDIT,
+                "LEADER_APPLY",
+                id
+        );
         return ApiResponse.ok(Map.of("applyId", id));
     }
 

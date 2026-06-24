@@ -8,6 +8,9 @@ import com.example.campus.dto.OrganizationRequests.MemberAuditRequest;
 import com.example.campus.dto.OrganizationRequests.OrganizationApplyRequest;
 import com.example.campus.dto.OrganizationRequests.OrganizationUpdateRequest;
 import com.example.campus.enums.JoinStatus;
+import com.example.campus.enums.MessageCategory;
+import com.example.campus.enums.NoticeTargetRole;
+import com.example.campus.message.MessageService;
 import com.example.campus.security.CurrentUser;
 import com.example.campus.security.UserContext;
 import java.util.Map;
@@ -27,12 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/organizations")
 public class OrganizationController {
     private final Db db;
+    private final MessageService messageService;
 
     /**
-     * 注入组织模块使用的数据库工具类。
+     * 注入组织模块使用的数据库工具类和消息服务。
      */
-    public OrganizationController(Db db) {
+    public OrganizationController(Db db, MessageService messageService) {
         this.db = db;
+        this.messageService = messageService;
     }
 
     /**
@@ -89,6 +94,14 @@ public class OrganizationController {
                 values(?, ?, ?, ?, ?, ?)
                 """, user.userId(), Db.require(request.orgName(), "orgName"), Db.require(request.orgType(), "orgType").name(),
                 request.description(), Db.require(request.applyReason(), "applyReason"), request.contact());
+        messageService.notifyRole(
+                NoticeTargetRole.ADMIN,
+                "新的组织成立申请待审批",
+                user.realName() + " 申请成立组织：" + request.orgName(),
+                MessageCategory.AUDIT,
+                "ORGANIZATION_APPLY",
+                id
+        );
         return ApiResponse.ok(Map.of("orgApplyId", id));
     }
 
@@ -157,6 +170,14 @@ public class OrganizationController {
                     where org_id=? and user_id=?
                     """, request.applyReason(), id, user.userId());
         }
+        messageService.notifyUser(
+                ((Number) org.get("principal_user_id")).longValue(),
+                "新的组织成员申请",
+                user.realName() + " 申请加入组织“" + org.get("org_name") + "”。",
+                MessageCategory.AUDIT,
+                "ORGANIZATION_MEMBER",
+                id
+        );
         return ApiResponse.ok(Map.of("orgId", id));
     }
 
@@ -189,10 +210,24 @@ public class OrganizationController {
             throw new BusinessException("成员审核状态只能是 APPROVED 或 REJECTED");
         }
 
-        db.jdbc().update("""
+        int updated = db.jdbc().update("""
                 update organization_member set join_status=?, reject_reason=?
                 where org_id=? and user_id=? and join_status='PENDING'
                 """, status.name(), request.rejectReason(), id, userId);
+        if (updated == 0) {
+            throw new BusinessException("待审核成员申请不存在");
+        }
+        Map<String, Object> org = db.one("select org_name from organization where org_id=?", id);
+        messageService.notifyUser(
+                userId,
+                status == JoinStatus.APPROVED ? "组织加入申请已通过" : "组织加入申请已驳回",
+                status == JoinStatus.APPROVED
+                        ? "你加入组织“" + org.get("org_name") + "”的申请已通过。"
+                        : "你加入组织“" + org.get("org_name") + "”的申请未通过：" + (request.rejectReason() == null ? "未填写原因" : request.rejectReason()),
+                MessageCategory.AUDIT,
+                "ORGANIZATION_MEMBER",
+                id
+        );
         return ApiResponse.ok(Map.of("orgId", id, "userId", userId));
     }
 

@@ -8,6 +8,9 @@ import OrganizationCenter from '../views/OrganizationCenter.vue'
 import OrganizationDetail from '../views/OrganizationDetail.vue'
 import MyRecords from '../views/MyRecords.vue'
 import AiAssistant from '../views/AiAssistant.vue'
+import AffairApplications from '../views/AffairApplications.vue'
+import MessageCenter from '../views/MessageCenter.vue'
+import ActivityFeedback from '../views/ActivityFeedback.vue'
 import LeaderHome from '../views/LeaderHome.vue'
 import LeaderManage from '../views/LeaderManage.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
@@ -29,6 +32,9 @@ const router = createRouter({
     { path: '/organizations/:id', component: OrganizationDetail },
     { path: '/mine', component: MyRecords },
     { path: '/ai', component: AiAssistant },
+    { path: '/affairs', component: AffairApplications },
+    { path: '/messages', component: MessageCenter },
+    { path: '/feedbacks', component: ActivityFeedback },
     { path: '/leader-home', component: LeaderHome, meta: { primaryRoles: ['ORG_LEADER'] } },
     { path: '/leader', component: LeaderManage, meta: { primaryRoles: ['ORG_LEADER'] } },
     { path: '/admin', component: AdminDashboard, meta: { primaryRoles: ['ADMIN'] } },

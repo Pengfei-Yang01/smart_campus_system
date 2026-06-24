@@ -14,6 +14,9 @@
           <el-menu-item index="/home"><el-icon><House /></el-icon><span>学生首页</span></el-menu-item>
           <el-menu-item index="/activities"><el-icon><Calendar /></el-icon><span>活动中心</span></el-menu-item>
           <el-menu-item index="/organizations"><el-icon><OfficeBuilding /></el-icon><span>组织中心</span></el-menu-item>
+          <el-menu-item index="/affairs"><el-icon><Document /></el-icon><span>事务申请</span></el-menu-item>
+          <el-menu-item index="/messages"><el-icon><Bell /></el-icon><span>消息通知</span></el-menu-item>
+          <el-menu-item index="/feedbacks"><el-icon><Star /></el-icon><span>评价反馈</span></el-menu-item>
           <el-menu-item index="/mine"><el-icon><TrendCharts /></el-icon><span>我的活动与积分</span></el-menu-item>
           <el-menu-item index="/ai"><el-icon><ChatLineRound /></el-icon><span>AI 助手</span></el-menu-item>
         </template>
@@ -24,6 +27,9 @@
           <el-menu-item index="/leader"><el-icon><Management /></el-icon><span>组织负责人管理</span></el-menu-item>
           <el-menu-item index="/activities"><el-icon><Calendar /></el-icon><span>活动浏览</span></el-menu-item>
           <el-menu-item index="/organizations"><el-icon><OfficeBuilding /></el-icon><span>组织浏览</span></el-menu-item>
+          <el-menu-item index="/affairs"><el-icon><Document /></el-icon><span>事务申请</span></el-menu-item>
+          <el-menu-item index="/messages"><el-icon><Bell /></el-icon><span>消息通知</span></el-menu-item>
+          <el-menu-item index="/feedbacks"><el-icon><Star /></el-icon><span>评价反馈</span></el-menu-item>
           <el-menu-item index="/mine"><el-icon><TrendCharts /></el-icon><span>我的活动与积分</span></el-menu-item>
           <el-menu-item index="/ai"><el-icon><ChatLineRound /></el-icon><span>AI 助手</span></el-menu-item>
         </template>
@@ -36,6 +42,9 @@
           <el-menu-item index="/admin/scores"><el-icon><Medal /></el-icon><span>积分审核</span></el-menu-item>
           <el-menu-item index="/activities"><el-icon><Calendar /></el-icon><span>活动总览</span></el-menu-item>
           <el-menu-item index="/organizations"><el-icon><OfficeBuilding /></el-icon><span>组织总览</span></el-menu-item>
+          <el-menu-item index="/affairs"><el-icon><Document /></el-icon><span>事务审批</span></el-menu-item>
+          <el-menu-item index="/messages"><el-icon><Bell /></el-icon><span>消息通知</span></el-menu-item>
+          <el-menu-item index="/feedbacks"><el-icon><Star /></el-icon><span>评价反馈</span></el-menu-item>
           <el-menu-item index="/mine"><el-icon><TrendCharts /></el-icon><span>我的活动与积分</span></el-menu-item>
           <el-menu-item index="/ai"><el-icon><ChatLineRound /></el-icon><span>AI 助手</span></el-menu-item>
         </template>
@@ -64,13 +73,16 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Calendar,
+  Bell,
   ChatLineRound,
   Checked,
+  Document,
   House,
   Management,
   Medal,
   OfficeBuilding,
   School,
+  Star,
   SwitchButton,
   TrendCharts,
   User
