@@ -3,6 +3,7 @@ front/node_modules/
 front/dist/
 _extracted_docs/
 .run_logs/
+.runtime/
 *.log
 .idea/
 .vscode/
