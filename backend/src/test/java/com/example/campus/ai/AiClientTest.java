@@ -47,12 +47,14 @@ class AiClientTest {
                 "http://127.0.0.1:" + server.getAddress().getPort() + "/v1",
                 "test-key",
                 "test-model",
-                5
+                5,
+                800
         ));
 
         AiClient.AiResult result = client.chat("系统提示", "用户问题");
 
         assertThat(requestBody.get()).contains("\"model\":\"test-model\"");
+        assertThat(requestBody.get()).contains("\"max_tokens\":800");
         assertThat(requestBody.get()).contains("\"role\":\"system\"");
         assertThat(requestBody.get()).contains("\"role\":\"user\"");
         assertThat(authHeader.get()).isEqualTo("Bearer test-key");
@@ -64,7 +66,7 @@ class AiClientTest {
 
     @Test
     void rejectsDisabledServiceBeforeCallingProvider() {
-        AiClient client = new AiClient(new AiProperties(false, "http://127.0.0.1:1/v1", "key", "model", 5));
+        AiClient client = new AiClient(new AiProperties(false, "http://127.0.0.1:1/v1", "key", "model", 5, 800));
 
         assertThatThrownBy(() -> client.chat("系统提示", "用户问题"))
                 .isInstanceOf(BusinessException.class)
@@ -73,7 +75,7 @@ class AiClientTest {
 
     @Test
     void rejectsMissingApiKeyBeforeCallingProvider() {
-        AiClient client = new AiClient(new AiProperties(true, "http://127.0.0.1:1/v1", "", "model", 5));
+        AiClient client = new AiClient(new AiProperties(true, "http://127.0.0.1:1/v1", "", "model", 5, 800));
 
         assertThatThrownBy(() -> client.chat("系统提示", "用户问题"))
                 .isInstanceOf(BusinessException.class)

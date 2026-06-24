@@ -70,4 +70,34 @@ class AiControllerTest {
         verify(client, never()).chat(any(), any());
         verify(db, never()).insert(any(), any());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void chatTruncatesOverlongAnswerBeforeStoring() {
+        Db db = mock(Db.class);
+        AiClient client = mock(AiClient.class);
+        AiContextService contextService = mock(AiContextService.class);
+        CurrentUser user = new CurrentUser(1L, "admin", "系统管理员", Set.of("ADMIN"));
+        UserContext.set(user);
+        when(contextService.build(user)).thenReturn("管理员平台摘要");
+        when(client.chat(any(), any())).thenReturn(new AiClient.AiResult("答".repeat(20001), "test-model", 12, 8));
+
+        AiController controller = new AiController(db, client, contextService);
+
+        Map<String, Object> data = (Map<String, Object>) controller.chat(new ChatRequest("最近有哪些活动？")).data();
+
+        String answer = String.valueOf(data.get("answer"));
+        assertThat(answer).endsWith("（回答过长，已截断）");
+        assertThat(answer.length()).isLessThan(20100);
+        verify(db).insert(
+                org.mockito.ArgumentMatchers.contains("insert into ai_qa_record"),
+                eq(1L),
+                eq("最近有哪些活动？"),
+                eq(answer),
+                eq("test-model"),
+                eq(12),
+                eq(8),
+                any()
+        );
+    }
 }

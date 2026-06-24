@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/ai")
 public class AiController {
+    private static final int MAX_STORED_ANSWER_CHARS = 20000;
     private static final String SYSTEM_PROMPT = """
             你是智慧校园综合服务与活动管理系统的 AI 助手。
             使用中文回答。优先基于提供的系统业务上下文回答。
@@ -50,15 +51,16 @@ public class AiController {
         long start = System.currentTimeMillis();
         AiClient.AiResult result = aiClient.chat(SYSTEM_PROMPT, userPrompt);
         int costMs = Math.toIntExact(Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - start));
+        String answer = limitAnswer(result.answer());
 
         db.insert("""
                 insert into ai_qa_record(user_id, question, answer, model_name, prompt_tokens, completion_tokens, cost_ms)
                 values(?, ?, ?, ?, ?, ?, ?)
-                """, user.userId(), question, result.answer(), result.modelName(),
+                """, user.userId(), question, answer, result.modelName(),
                 result.promptTokens(), result.completionTokens(), costMs);
 
         return ApiResponse.ok(Map.of(
-                "answer", result.answer(),
+                "answer", answer,
                 "modelName", result.modelName(),
                 "promptTokens", result.promptTokens(),
                 "completionTokens", result.completionTokens(),
@@ -76,5 +78,12 @@ public class AiController {
                 order by called_at desc
                 limit 20
                 """, user.userId()));
+    }
+
+    private String limitAnswer(String answer) {
+        if (answer == null || answer.length() <= MAX_STORED_ANSWER_CHARS) {
+            return answer;
+        }
+        return answer.substring(0, MAX_STORED_ANSWER_CHARS) + "\n\n（回答过长，已截断）";
     }
 }

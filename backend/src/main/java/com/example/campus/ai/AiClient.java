@@ -36,6 +36,7 @@ public class AiClient {
         try {
             Map<String, Object> payload = Map.of(
                     "model", properties.modelOrDefault(),
+                    "max_tokens", properties.maxOutputTokensOrDefault(),
                     "messages", List.of(
                             Map.of("role", "system", "content", systemPrompt),
                             Map.of("role", "user", "content", userPrompt)

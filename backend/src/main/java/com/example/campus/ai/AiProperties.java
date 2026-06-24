@@ -12,7 +12,8 @@ public record AiProperties(
         String apiBaseUrl,
         String apiKey,
         String model,
-        int timeoutSeconds
+        int timeoutSeconds,
+        int maxOutputTokens
 ) {
     public Duration timeout() {
         return Duration.ofSeconds(timeoutSeconds <= 0 ? 30 : timeoutSeconds);
@@ -27,5 +28,9 @@ public record AiProperties(
 
     public String modelOrDefault() {
         return model == null || model.isBlank() ? "gpt-4o-mini" : model.trim();
+    }
+
+    public int maxOutputTokensOrDefault() {
+        return maxOutputTokens <= 0 ? 800 : maxOutputTokens;
     }
 }

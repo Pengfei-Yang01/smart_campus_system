@@ -30,3 +30,4 @@ app:
     api-key: ${AI_API_KEY:}
     model: ${AI_MODEL:gpt-4o-mini}
     timeout-seconds: ${AI_TIMEOUT_SECONDS:30}
+    max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:800}
