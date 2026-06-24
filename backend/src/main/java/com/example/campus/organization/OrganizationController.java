@@ -113,6 +113,10 @@ public class OrganizationController {
     @PutMapping("/{id}")
     public ApiResponse<Object> update(@PathVariable Long id, @RequestBody OrganizationUpdateRequest request) {
         ensureCanManageOrg(id);
+        Map<String, Object> org = db.one("select org_status from organization where org_id=?", id);
+        if (!"ACTIVE".equals(String.valueOf(org.get("org_status")))) {
+            throw new BusinessException("当前组织已被停用，请联系管理员");
+        }
         db.jdbc().update("""
                 update organization set org_name=?, org_type=?, description=?, contact=?
                 where org_id=?
