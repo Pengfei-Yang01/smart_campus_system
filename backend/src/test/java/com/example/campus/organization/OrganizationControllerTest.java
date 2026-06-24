@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - 组织负责人申请创建组织
  * - 普通学生申请创建组织被拒绝
  * - 学生加入活跃组织
+ * - 停用组织拒绝加入
+ * - 已加入或待审核的成员拒绝重复申请
  * - 负责人审核通过成员加入
  */
 @ActiveProfiles("test")
@@ -78,6 +80,36 @@ class OrganizationControllerTest {
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resp.getBody()).isNotNull();
         assertThat(resp.getBody().code()).isEqualTo(0);
+    }
+
+    /** 停用状态的组织不允许学生申请加入。 */
+    @Test
+    void join_停用组织失败() {
+        var token = loginAs("student1");
+        var resp = post("/api/organizations/3/join", Map.of("applyReason", "测试停用组织"), token);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().code()).isNotEqualTo(0);
+    }
+
+    /** 已经加入组织的学生不能重复申请加入。 */
+    @Test
+    void join_已加入组织不能重复申请() {
+        var token = loginAs("student1");
+        var resp = post("/api/organizations/1/join", Map.of("applyReason", "重复申请"), token);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().code()).isNotEqualTo(0);
+    }
+
+    /** 已有待审核申请时，不能重复提交加入申请。 */
+    @Test
+    void join_待审核申请不能重复提交() {
+        var token = loginAs("student2");
+        var resp = post("/api/organizations/1/join", Map.of("applyReason", "重复待审核申请"), token);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().code()).isNotEqualTo(0);
     }
 
     // ======================== 成员审核 ========================

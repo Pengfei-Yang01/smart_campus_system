@@ -22,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - 学生创建活动被拒绝（角色权限约束）
  * - 活动状态有效流转 DRAFT→OPEN→CLOSED→FINISHED→OFFLINE
  * - 活动状态无效跳转被拒绝（DRAFT→FINISHED）
+ * - 不存在的活动详情被拒绝
+ * - 停用组织不能继续创建活动或报名活动
  * - 正常报名成功
  * - 活动已满员时报名被拒绝（容量约束）
  * - 报名截止后报名被拒绝（时间约束）
@@ -110,6 +112,50 @@ class ActivityControllerTest {
         assertThat(resp.getBody().message()).contains("不允许");
     }
 
+    // ======================== 活动详情 ========================
+
+    /** 查询不存在的活动详情时，后端应返回业务错误。 */
+    @Test
+    void detail_活动不存在() {
+        var token = loginAs("student1");
+        var resp = get("/api/activities/9999", token);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().code()).isNotEqualTo(0);
+    }
+
+    // ======================== 停用组织约束 ========================
+
+    /** 管理员也不能在已停用组织下创建新活动。 */
+    @Test
+    void create_停用组织不能创建活动() {
+        var token = loginAs("admin");
+        var body = Map.<String, Object>of(
+                "activityName", "停用组织新活动",
+                "typeId", 1,
+                "orgId", 3,
+                "startTime", "2026-08-20 14:00:00",
+                "endTime", "2026-08-20 17:00:00",
+                "registrationDeadline", "2026-08-19 18:00:00",
+                "location", "测试地点",
+                "capacity", 30
+        );
+        var resp = post("/api/activities", body, token);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().code()).isNotEqualTo(0);
+    }
+
+    /** 即使活动状态是 OPEN，只要所属组织已停用，也不能报名。 */
+    @Test
+    void register_停用组织活动不能报名() {
+        var token = loginAs("student1");
+        var resp = post("/api/activities/4/register", Map.of(), token);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().code()).isNotEqualTo(0);
+    }
+
     // ======================== 报名 ========================
 
     /** 用户(admin有STUDENT角色)可以报名开放中的活动 */
@@ -186,6 +232,11 @@ class ActivityControllerTest {
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
         return headers;
+    }
+
+    private ResponseEntity<ApiResponse> get(String path, String token) {
+        return rest.exchange(path, HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(token)), ApiResponse.class);
     }
 
     private ResponseEntity<ApiResponse> post(String path, Object body, String token) {
