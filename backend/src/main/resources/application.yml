@@ -24,3 +24,9 @@ app:
   # 令牌服务使用的配置，生产环境应覆盖。
   token-secret: ${TOKEN_SECRET:smart-campus-dev-secret}
   token-hours: 12
+  ai:
+    enabled: ${AI_ENABLED:false}
+    api-base-url: ${AI_API_BASE_URL:https://api.openai.com/v1}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:gpt-4o-mini}
+    timeout-seconds: ${AI_TIMEOUT_SECONDS:30}
