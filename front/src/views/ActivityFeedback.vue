@@ -42,6 +42,13 @@
               <template #default="{ row }"><el-rate :model-value="Number(row.rating)" disabled /></template>
             </el-table-column>
             <el-table-column prop="content" label="评价内容" min-width="220" />
+            <el-table-column label="可见性" width="90">
+              <template #default="{ row }">
+                <el-tag :type="row.anonymous ? 'info' : 'success'" size="small" effect="plain">
+                  {{ row.anonymous ? '匿名' : '实名' }}
+                </el-tag>
+              </template>
+            </el-table-column>
             <el-table-column prop="feedback_status" label="状态" width="110" />
             <el-table-column prop="reply_content" label="回复" min-width="180" />
           </el-table>
