@@ -47,7 +47,7 @@ public class FeedbackController {
     @GetMapping("/activities/{activityId}/feedbacks")
     public ApiResponse<Object> activityFeedbacks(@PathVariable Long activityId) {
         return ApiResponse.ok(db.jdbc().queryForList("""
-                select f.feedback_id, f.activity_id, f.rating, f.content, f.anonymous,
+                select f.feedback_id, f.activity_id, f.user_id, f.rating, f.content, f.anonymous,
                        case when f.anonymous then '匿名用户' else u.real_name end display_name,
                        f.reply_content, replier.real_name replier_name, f.replied_at,
                        f.created_at

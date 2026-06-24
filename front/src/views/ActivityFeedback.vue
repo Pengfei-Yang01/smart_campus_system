@@ -62,7 +62,12 @@
             <el-button :icon="Refresh" @click="loadPublicFeedbacks">刷新</el-button>
           </div>
           <el-table :data="publicFeedbacks" height="430">
-            <el-table-column prop="display_name" label="评价人" width="120" />
+            <el-table-column label="评价人" width="130">
+              <template #default="{ row }">
+                <el-tag v-if="row.user_id === auth.user.userId" size="small" type="info" style="margin-right: 4px">我的</el-tag>
+                {{ row.display_name }}
+              </template>
+            </el-table-column>
             <el-table-column label="评分" width="150">
               <template #default="{ row }"><el-rate :model-value="Number(row.rating)" disabled /></template>
             </el-table-column>
