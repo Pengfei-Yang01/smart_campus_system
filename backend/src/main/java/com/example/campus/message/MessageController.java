@@ -46,7 +46,7 @@ public class MessageController {
     @GetMapping("/messages")
     public ApiResponse<Object> messages(@RequestParam(required = false) Boolean unread) {
         CurrentUser user = UserContext.get();
-        String unreadCondition = Boolean.TRUE.equals(unread) ? " and m.read_at is null" : "";
+        String unreadCondition = Boolean.TRUE.equals(unread) ? " and m.read_at is null\n" : "";
         return ApiResponse.ok(db.jdbc().queryForList("""
                 select m.*, n.target_role, n.priority, n.notice_status
                 from user_message m

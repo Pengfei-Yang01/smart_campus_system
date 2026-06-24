@@ -40,6 +40,13 @@ class MessageControllerTest {
         var countData = (Map<String, Object>) countResp.getBody().data();
         assertThat(((Number) countData.get("count")).intValue()).isGreaterThan(0);
 
+        var unreadResp = get("/api/messages?unread=true", token);
+        assertThat(unreadResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        var unreadRows = (List<Map<String, Object>>) unreadResp.getBody().data();
+        assertThat(unreadRows).isNotEmpty();
+        assertThat(unreadRows).allMatch(row -> row.get("read_at") == null);
+
         var readResp = patch("/api/messages/read-all", Map.of(), token);
         assertThat(readResp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
