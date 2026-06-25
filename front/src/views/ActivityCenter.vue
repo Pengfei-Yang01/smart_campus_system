@@ -90,7 +90,7 @@ import http from '../api/http'
 const PAGE_SIZE = 10
 const ACTIVITY_STATUS_OPTIONS = ['DRAFT', 'OPEN', 'CLOSED', 'FINISHED', 'OFFLINE']
 
-// 3. 响应式数据定义（语义化命名，保留原有数据逻辑不改动）
+// 3. 响应式数据定义
 // 活动类型下拉数据源
 const activityTypeList = ref([])
 // 后端返回全量活动表格数据（前端分页原始数据源）
@@ -104,14 +104,14 @@ const query = reactive({
   status: ''
 })
 
-// 4. 前端分页计算属性（原有分页逻辑完全保留，仅重命名）
+// 4. 前端分页计算属性
 const pageTableData = computed(() => {
   const startIndex = (currentPage.value - 1) * PAGE_SIZE
   const endIndex = currentPage.value * PAGE_SIZE
   return activityTableData.value.slice(startIndex, endIndex)
 })
 
-// 5. 生命周期：页面初始化加载数据（执行顺序、接口请求完全不变）
+// 5. 生命周期：页面初始化加载数据
 onMounted(async () => {
   // 先加载活动类型下拉数据
   activityTypeList.value = await http.get('/activity-types')
@@ -121,7 +121,7 @@ onMounted(async () => {
 
 /**
  * 加载活动列表数据，筛选后重置页码到第一页
- * @description 原有load函数完整逻辑保留，仅语义化重命名
+ * @description load函数逻辑
  */
 const loadActivityList = async () => {
   activityTableData.value = await http.get('/activities', { params: query })
@@ -136,7 +136,6 @@ const handleRowClick = (row) => {
   $router.push(`/activities/${row.activity_id}`)
 }
 
-// 兼容保留原变量名（彻底杜绝外部/模板依赖报错，功能100%兼容原有逻辑）
 const types = activityTypeList
 const rows = activityTableData
 const page = currentPage

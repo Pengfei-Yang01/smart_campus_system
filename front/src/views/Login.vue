@@ -69,7 +69,7 @@ import { ElMessage } from 'element-plus'
 import { School } from '@element-plus/icons-vue'
 import { useAuthStore } from '../stores/auth'
 
-// 【常量抽离：仅优化可读性，赋值完全和原版一致，不改变任何初始值】
+// 常量抽离
 const DEFAULT_TAB = 'login'
 const DEFAULT_USER = 'admin'
 const DEFAULT_PWD = '123456'
@@ -77,7 +77,7 @@ const DEFAULT_COLLEGE = '软件学院'
 const DEFAULT_MAJOR = '软件工程'
 const DEFAULT_GRADE = '2023'
 
-// 实例初始化，与原版保持一致
+// 实例初始化
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -85,13 +85,13 @@ const router = useRouter()
 const currentTabMode = ref(DEFAULT_TAB)
 const submitLoading = ref(false)
 
-// 登录表单：默认值和原版完全一致
+// 登录表单
 const loginFormData = reactive({
   username: DEFAULT_USER,
   password: DEFAULT_PWD
 })
 
-// 注册表单：所有默认字段与原版完全一致
+// 注册表单
 const registerFormData = reactive({
   username: '',
   studentNo: '',
@@ -104,7 +104,7 @@ const registerFormData = reactive({
 })
 
 /**
- * 登录逻辑：逐行复刻原版逻辑，仅做函数注释与语义化命名
+ * 登录逻辑
  */
 const handleLogin = async () => {
   submitLoading.value = true
@@ -118,7 +118,7 @@ const handleLogin = async () => {
 }
 
 /**
- * 注册逻辑：逐行复刻原版逻辑，仅做函数注释与语义化命名
+ * 注册逻辑
  */
 const handleRegister = async () => {
   submitLoading.value = true
@@ -131,7 +131,6 @@ const handleRegister = async () => {
   }
 }
 
-// ========== 核心兼容代码：100%保留模板依赖的所有原始变量名，保证页面直接运行无报错 ==========
 const mode = currentTabMode
 const loading = submitLoading
 const loginForm = loginFormData

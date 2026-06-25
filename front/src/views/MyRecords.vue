@@ -34,28 +34,64 @@
 </template>
 
 <script setup>
+// 规范导入顺序：Vue内置API → 公共组件 → 接口请求工具
 import { computed, onMounted, ref } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
 import http from '../api/http'
 
-const registrations = ref([])
-const scores = ref([])
+// 常量抽离魔法字符串，仅优化维护性，不改变匹配规则
+const AUDIT_STATUS_APPROVED = 'APPROVED'
+const AUDIT_STATUS_PENDING = 'PENDING'
+const REG_STATUS_VALID = 'VALID'
+const CHECKIN_STATUS_CHECKED = 'CHECKED'
 
-// 第一个指标卡展示的已通过积分总数。
-const approvedTotal = computed(() => scores.value.filter((s) => s.audit_status === 'APPROVED').reduce((sum, s) => sum + Number(s.final_score || 0), 0).toFixed(2))
+// 响应式数据源（语义化命名）
+const userRegistrationList = ref([])
+const userScoreList = ref([])
 
-// 等待管理员审核的积分记录数量。
-const pendingCount = computed(() => scores.value.filter((s) => s.audit_status === 'PENDING').length)
-
-// 未取消的有效报名数量。
-const validRegistrationCount = computed(() => registrations.value.filter((r) => r.registration_status === 'VALID').length)
-
-// 已标记为出勤的报名数量。
-const checkedCount = computed(() => registrations.value.filter((r) => r.checkin_status === 'CHECKED').length)
-
-// 进入页面时加载个人报名和积分记录。
-onMounted(async () => {
-  registrations.value = await http.get('/me/registrations')
-  scores.value = await http.get('/me/scores')
+/**
+ * 计算属性：统计审核通过的积分总金额，保留2位小数
+ */
+const calcApprovedTotal = computed(() => {
+  return userScoreList.value
+    .filter(item => item.audit_status === AUDIT_STATUS_APPROVED)
+    .reduce((total, item) => total + Number(item.final_score || 0), 0)
+    .toFixed(2)
 })
+
+/**
+ * 计算属性：统计待审核的积分记录条数
+ */
+const calcPendingCount = computed(() => {
+  return userScoreList.value.filter(item => item.audit_status === AUDIT_STATUS_PENDING).length
+})
+
+/**
+ * 计算属性：统计有效报名（未取消）的活动数量
+ */
+const calcValidRegistrationCount = computed(() => {
+  return userRegistrationList.value.filter(item => item.registration_status === REG_STATUS_VALID).length
+})
+
+/**
+ * 计算属性：统计已签到的活动报名数量
+ */
+const calcCheckedCount = computed(() => {
+  return userRegistrationList.value.filter(item => item.checkin_status === CHECKIN_STATUS_CHECKED).length
+})
+
+/**
+ * 页面初始化：加载当前用户报名记录、积分明细
+ */
+onMounted(async () => {
+  userRegistrationList.value = await http.get('/me/registrations')
+  userScoreList.value = await http.get('/me/scores')
+})
+
+const registrations = userRegistrationList
+const scores = userScoreList
+const approvedTotal = calcApprovedTotal
+const pendingCount = calcPendingCount
+const validRegistrationCount = calcValidRegistrationCount
+const checkedCount = calcCheckedCount
 </script>
