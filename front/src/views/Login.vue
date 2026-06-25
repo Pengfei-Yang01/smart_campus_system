@@ -62,53 +62,81 @@
 </template>
 
 <script setup>
+// 规范导入顺序：Vue内置API → 路由 → ElementPlus工具类 → 图标 → Pinia状态
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { School } from '@element-plus/icons-vue'
 import { useAuthStore } from '../stores/auth'
 
-const auth = useAuthStore()
+// 【常量抽离：仅优化可读性，赋值完全和原版一致，不改变任何初始值】
+const DEFAULT_TAB = 'login'
+const DEFAULT_USER = 'admin'
+const DEFAULT_PWD = '123456'
+const DEFAULT_COLLEGE = '软件学院'
+const DEFAULT_MAJOR = '软件工程'
+const DEFAULT_GRADE = '2023'
+
+// 实例初始化，与原版保持一致
+const authStore = useAuthStore()
 const router = useRouter()
-const mode = ref('login')
-const loading = ref(false)
 
-// 默认填入演示账号，方便本地快速测试，用户也可以自行修改。
-const loginForm = reactive({ username: 'admin', password: '123456' })
+// 语义化命名响应式变量
+const currentTabMode = ref(DEFAULT_TAB)
+const submitLoading = ref(false)
 
-// 注册表单直接对应后端注册请求对象。
-const registerForm = reactive({
+// 登录表单：默认值和原版完全一致
+const loginFormData = reactive({
+  username: DEFAULT_USER,
+  password: DEFAULT_PWD
+})
+
+// 注册表单：所有默认字段与原版完全一致
+const registerFormData = reactive({
   username: '',
   studentNo: '',
   realName: '',
   password: '',
-  college: '软件学院',
-  major: '软件工程',
+  college: DEFAULT_COLLEGE,
+  major: DEFAULT_MAJOR,
   className: '',
-  grade: '2023'
+  grade: DEFAULT_GRADE
 })
 
-// 通过认证状态仓库登录，然后跳转到角色专属首页。
-async function login() {
-  loading.value = true
+/**
+ * 登录逻辑：逐行复刻原版逻辑，仅做函数注释与语义化命名
+ */
+const handleLogin = async () => {
+  submitLoading.value = true
   try {
-    await auth.login(loginForm)
+    await authStore.login(loginFormData)
     ElMessage.success('登录成功')
-    router.push(auth.homePath)
+    router.push(authStore.homePath)
   } finally {
-    loading.value = false
+    submitLoading.value = false
   }
 }
 
-// 注册普通学生账号，并使用返回的令牌进入系统。
-async function register() {
-  loading.value = true
+/**
+ * 注册逻辑：逐行复刻原版逻辑，仅做函数注释与语义化命名
+ */
+const handleRegister = async () => {
+  submitLoading.value = true
   try {
-    await auth.register(registerForm)
+    await authStore.register(registerFormData)
     ElMessage.success('注册成功')
-    router.push(auth.homePath)
+    router.push(authStore.homePath)
   } finally {
-    loading.value = false
+    submitLoading.value = false
   }
 }
+
+// ========== 核心兼容代码：100%保留模板依赖的所有原始变量名，保证页面直接运行无报错 ==========
+const mode = currentTabMode
+const loading = submitLoading
+const loginForm = loginFormData
+const registerForm = registerFormData
+const auth = authStore
+const login = handleLogin
+const register = handleRegister
 </script>
