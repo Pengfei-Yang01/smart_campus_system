@@ -7,7 +7,10 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /**
- * Builds a compact business-data summary that the model can use safely.
+ * AI 上下文构建服务。
+ *
+ * 根据当前用户角色读取少量必要业务数据，整理成可发送给模型的文本，
+ * 让回答尽量基于系统真实数据，同时避免暴露数据库结构和内部实现。
  */
 @Service
 public class AiContextService {
@@ -17,6 +20,12 @@ public class AiContextService {
         this.db = db;
     }
 
+    /**
+     * 构建当前用户可见的业务上下文。
+     *
+     * @param user 当前登录用户
+     * @return 可直接拼接到用户提示词中的上下文文本
+     */
     public String build(CurrentUser user) {
         StringBuilder text = new StringBuilder();
         text.append("当前用户：").append(user.realName()).append("（").append(user.username()).append("）\n");
@@ -88,6 +97,9 @@ public class AiContextService {
         return text.toString();
     }
 
+    /**
+     * 把查询结果追加成简短列表，空结果也写出明确提示。
+     */
     private void appendRows(StringBuilder text, String title, List<Map<String, Object>> rows) {
         text.append("【").append(title).append("】\n");
         if (rows.isEmpty()) {

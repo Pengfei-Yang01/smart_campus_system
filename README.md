@@ -2,7 +2,7 @@
 
 智慧校园综测服务与活动管理系统是一个前后端分离的校园活动管理项目，覆盖学生报名、组织管理、活动发布、成员审批、签到、综测积分录入与审核、学生事务申请、消息通知、活动评价反馈等流程。系统按角色划分学生端、组织负责人端和管理员端，并根据主角色进入不同首页。
 
-> AI 问答模块当前按课程要求暂不接入大模型，仅保留页面占位和 `ai_qa_record` 数据表。
+> AI 问答模块已接入 OpenAI 兼容接口，默认关闭。配置 `AI_ENABLED=true` 和 `AI_API_KEY` 后可启用模型问答；未启用时历史记录仍可查看，提问会返回受控提示。
 
 ## Features
 
@@ -13,6 +13,7 @@
 - 学生事务申请：学生申请桌椅、宣传位、物资，组织负责人可额外申请教室和场地，管理员审批
 - 消息通知中心：审批结果、系统公告、评价回复和待处理提醒按角色进入个人收件箱
 - 活动评价反馈：已签到参与者评价活动，组织负责人管理和回复评价，管理员可全局管理
+- AI 助手：基于活动、报名、组织和积分上下文回答校园事务问题，并保存问答记录
 - MySQL 初始化脚本，包含建表语句和演示数据
 - 按主角色隔离首页与导航，避免管理员、负责人、学生权限混淆
 
@@ -115,6 +116,17 @@ $env:DB_USERNAME="root"
 $env:DB_PASSWORD="your_mysql_password"
 ```
 
+Optional AI configuration:
+
+```bash
+AI_ENABLED=true
+AI_API_KEY=your_api_key
+AI_API_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+```
+
+The AI module uses an OpenAI-compatible `/chat/completions` endpoint. Keep `AI_ENABLED=false` or omit it if you only want to run the normal campus management features.
+
 Run the backend:
 
 ```bash
@@ -214,7 +226,7 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/messages`: personal message center
 - `/feedbacks`: activity feedback submission and browsing
 - `/mine`: personal registrations and score records
-- `/ai`: AI assistant placeholder
+- `/ai`: AI assistant chat and history records
 
 ### Organization Leader
 
@@ -226,7 +238,7 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/messages`: personal message center
 - `/feedbacks`: activity feedback management and reply
 - `/mine`: personal registrations and score records
-- `/ai`: AI assistant placeholder
+- `/ai`: AI assistant chat and history records
 
 ### Admin
 
@@ -240,7 +252,7 @@ Only students see the "apply to become organization leader" form. Admins and org
 - `/messages`: message center and notice publishing
 - `/feedbacks`: global activity feedback management
 - `/mine`: personal registrations and score records
-- `/ai`: AI assistant placeholder
+- `/ai`: AI assistant chat and history records
 
 ## Build Commands
 

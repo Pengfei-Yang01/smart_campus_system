@@ -14,7 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * AI assistant endpoints for authenticated users.
+ * AI 助手接口。
+ *
+ * 已登录用户可以在这里发起问答并读取自己的历史记录。
+ * 控制器只负责请求校验、上下文组装、结果落库和统一响应，
+ * 真正的模型调用封装在 {@link AiClient} 中。
  */
 @RestController
 @RequestMapping("/api/ai")
@@ -39,6 +43,9 @@ public class AiController {
         this.contextService = contextService;
     }
 
+    /**
+     * 根据当前用户的业务上下文向模型提问，并把问答记录写入数据库。
+     */
     @PostMapping("/chat")
     public ApiResponse<Object> chat(@RequestBody ChatRequest request) {
         CurrentUser user = UserContext.get();
@@ -68,6 +75,9 @@ public class AiController {
         ));
     }
 
+    /**
+     * 查询当前用户最近的 AI 问答历史，用于前端进入页面时回显。
+     */
     @GetMapping("/records")
     public ApiResponse<Object> records() {
         CurrentUser user = UserContext.get();
@@ -80,6 +90,9 @@ public class AiController {
                 """, user.userId()));
     }
 
+    /**
+     * 限制落库回答长度，避免异常长文本影响数据库和页面展示。
+     */
     private String limitAnswer(String answer) {
         if (answer == null || answer.length() <= MAX_STORED_ANSWER_CHARS) {
             return answer;

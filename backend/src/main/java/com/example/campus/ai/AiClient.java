@@ -13,7 +13,10 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
- * Minimal OpenAI-compatible chat completions client.
+ * OpenAI 兼容的聊天补全客户端。
+ *
+ * 这里只封装最小调用流程：读取配置、构造请求、解析回答和 token 用量。
+ * 业务层通过 {@link BusinessException} 接收可展示给用户的错误提示。
  */
 @Component
 public class AiClient {
@@ -26,6 +29,13 @@ public class AiClient {
         this.httpClient = HttpClient.newBuilder().connectTimeout(properties.timeout()).build();
     }
 
+    /**
+     * 调用模型服务生成回答。
+     *
+     * @param systemPrompt 系统提示词，用于约束模型身份和回答边界
+     * @param userPrompt 带业务上下文的用户问题
+     * @return 模型回答和本次调用的基础统计信息
+     */
     public AiResult chat(String systemPrompt, String userPrompt) {
         if (!properties.enabled()) {
             throw new BusinessException("AI 服务未启用，请配置 AI_ENABLED=true");
@@ -75,6 +85,14 @@ public class AiClient {
         }
     }
 
+    /**
+     * 模型调用结果。
+     *
+     * @param answer 模型生成的回答正文
+     * @param modelName 实际使用的模型名称
+     * @param promptTokens 输入 token 数
+     * @param completionTokens 输出 token 数
+     */
     public record AiResult(String answer, String modelName, int promptTokens, int completionTokens) {
     }
 }
