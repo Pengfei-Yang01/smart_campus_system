@@ -80,8 +80,9 @@
 </template>
 
 <script setup>
-// 1. 导入模块（规范导入顺序：Vue内置API → 图标 → 公共组件 → 接口请求）
+// 1. 导入模块（规范导入顺序：Vue内置API → 路由 → 图标 → 公共组件 → 接口请求）
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import AppLayout from '../components/AppLayout.vue'
 import http from '../api/http'
@@ -91,6 +92,8 @@ const PAGE_SIZE = 10
 const ACTIVITY_STATUS_OPTIONS = ['DRAFT', 'OPEN', 'CLOSED', 'FINISHED', 'OFFLINE']
 
 // 3. 响应式数据定义
+// 路由实例，用于表格行点击后进入活动详情页
+const router = useRouter()
 // 活动类型下拉数据源
 const activityTypeList = ref([])
 // 后端返回全量活动表格数据（前端分页原始数据源）
@@ -133,7 +136,7 @@ const loadActivityList = async () => {
  * @param {Object} row 当前点击行数据
  */
 const handleRowClick = (row) => {
-  $router.push(`/activities/${row.activity_id}`)
+  router.push(`/activities/${row.activity_id}`)
 }
 
 const types = activityTypeList
