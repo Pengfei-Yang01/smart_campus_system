@@ -14,18 +14,18 @@
       <section class="login-form">
         <el-tabs v-model="mode" stretch>
           <el-tab-pane label="登录" name="login">
-            <el-form label-position="top" @submit.prevent>
+            <el-form label-position="top" @submit.prevent="login">
               <el-form-item label="账号">
                 <el-input v-model="loginForm.username" placeholder="用户名或学号" />
               </el-form-item>
               <el-form-item label="密码">
                 <el-input v-model="loginForm.password" type="password" show-password />
               </el-form-item>
-              <el-button type="primary" :loading="loading" style="width: 100%" @click="login">登录</el-button>
+              <el-button native-type="submit" type="primary" :loading="loading" style="width: 100%">登录</el-button>
             </el-form>
           </el-tab-pane>
           <el-tab-pane label="注册" name="register">
-            <el-form label-position="top" @submit.prevent>
+            <el-form label-position="top" @submit.prevent="register">
               <div class="form-grid">
                 <el-form-item label="用户名">
                   <el-input v-model="registerForm.username" />
@@ -52,7 +52,7 @@
                   <el-input v-model="registerForm.grade" />
                 </el-form-item>
               </div>
-              <el-button type="primary" :loading="loading" style="width: 100%" @click="register">注册并进入</el-button>
+              <el-button native-type="submit" type="primary" :loading="loading" style="width: 100%">注册并进入</el-button>
             </el-form>
           </el-tab-pane>
         </el-tabs>
