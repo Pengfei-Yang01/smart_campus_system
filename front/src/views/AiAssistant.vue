@@ -1,11 +1,79 @@
 <template>
   <AppLayout title="AI 助手" subtitle="结合活动、报名、组织和积分数据回答校园事务问题">
     <section class="panel ai-page">
+      <div v-if="messages.length > 0" class="ai-toolbar">
+        <div class="ai-toolbar-left">
+          <el-button v-if="!selectMode" size="small" @click="enterSelectMode">
+            批量管理
+          </el-button>
+          <template v-else>
+            <el-button size="small" @click="exitSelectMode">退出管理</el-button>
+            <span v-if="selectedQaIds.length" class="ai-selected-count">
+              已选 {{ selectedQaIds.length }} 条
+            </span>
+          </template>
+        </div>
+        <div class="ai-toolbar-right">
+          <template v-if="selectMode">
+            <el-checkbox
+              :model-value="isAllSelected"
+              :indeterminate="isIndeterminate"
+              @change="toggleAll"
+              size="small"
+            >
+              全选
+            </el-checkbox>
+            <el-button
+              type="danger"
+              size="small"
+              :disabled="!selectedQaIds.length"
+              @click="batchDelete"
+            >
+              删除选中
+            </el-button>
+          </template>
+          <el-popconfirm
+            v-else
+            title="确定清空所有问答记录？此操作不可恢复。"
+            @confirm="clearAll"
+          >
+            <template #reference>
+              <el-button size="small" type="danger" plain>清空记录</el-button>
+            </template>
+          </el-popconfirm>
+        </div>
+      </div>
+
       <div class="ai-history">
         <div v-if="messages.length === 0" class="ai-empty">
           <el-empty description="还没有问答记录，可以先问问最近有哪些活动适合报名。" />
         </div>
-        <div v-for="message in messages" :key="message.id" class="ai-message" :class="message.role">
+        <div
+          v-for="message in messages"
+          :key="message.id"
+          class="ai-message"
+          :class="[message.role, { 'is-select-mode': selectMode }]"
+        >
+          <!-- 多选模式的勾选框 -->
+          <div v-if="selectMode && getQaId(message)" class="ai-select-wrapper" @click.stop>
+            <el-checkbox
+              :model-value="selectedQaIds.includes(getQaId(message))"
+              @change="() => toggleSelect(getQaId(message))"
+            />
+          </div>
+
+          <!-- 悬停删除按钮 -->
+          <el-popconfirm
+            v-if="!selectMode && getQaId(message)"
+            title="删除这条问答记录？"
+            @confirm="deleteSingle(getQaId(message))"
+            placement="left"
+          >
+            <template #reference>
+              <el-icon class="ai-delete-icon"><Delete /></el-icon>
+            </template>
+          </el-popconfirm>
+
           <div class="ai-message-role">{{ message.role === 'user' ? '我' : 'AI 助手' }}</div>
           <div v-if="message.role === 'user'" class="ai-message-content">{{ message.content }}</div>
           <div v-else class="ai-message-content markdown-body" v-html="renderMarkdown(message.content)"></div>
@@ -29,7 +97,7 @@
           maxlength="1000"
           show-word-limit
           placeholder="例如：最近有哪些活动适合我报名？我的积分情况怎么样？"
-          @keydown.ctrl.enter.prevent="send"
+          @keydown.enter.exact.prevent="send"
         />
         <el-button type="primary" :loading="sending" :disabled="!question.trim()" @click="send">
           {{ sending ? `${waitingSeconds}s` : '发送' }}
@@ -40,8 +108,10 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { marked } from 'marked'
+import { Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import AppLayout from '../components/AppLayout.vue'
 import http from '../api/http'
 
@@ -57,6 +127,10 @@ const sending = ref(false)
 const messages = ref([])
 const waitingSeconds = ref(0)
 let waitingTimer = null
+
+/* ----- 多选删除状态 ----- */
+const selectMode = ref(false)
+const selectedQaIds = ref([])
 
 onMounted(loadRecords)
 
@@ -97,14 +171,20 @@ async function loadRecords() {
 async function send() {
   const text = question.value.trim()
   if (!text || sending.value) return
-  messages.value.push({ id: `local-q-${Date.now()}`, role: 'user', content: text })
+  const localId = `local-q-${Date.now()}`
+  messages.value.push({ id: localId, role: 'user', content: text })
   question.value = ''
   sending.value = true
   startWaitingTimer()
   try {
     const result = await http.post('/ai/chat', { question: text }, { timeout: 35000 })
+    // 用后端返回的真实 qa_id 更新本地消息 ID
+    const idx = messages.value.findIndex((m) => m.id === localId)
+    if (idx >= 0) {
+      messages.value[idx].id = `q-${result.qaId}`
+    }
     messages.value.push({
-      id: `local-a-${Date.now()}`,
+      id: `a-${result.qaId}`,
       role: 'assistant',
       content: result.answer,
       meta: `${result.modelName} | ${result.costMs || 0}ms`
@@ -112,6 +192,110 @@ async function send() {
   } finally {
     stopWaitingTimer()
     sending.value = false
+  }
+}
+
+/* ========== 删除逻辑 ========== */
+
+/** 从消息 ID 中提取 qa_id（"q-123" → 123，"local-…" → null） */
+function getQaId(message) {
+  if (!message || !message.id) return null
+  if (message.id.startsWith('local-')) return null
+  return parseInt(message.id.replace(/^[qa]-/, ''), 10)
+}
+
+/** 单条删除 */
+async function deleteSingle(qaId) {
+  try {
+    await http.delete(`/ai/record/${qaId}`)
+    messages.value = messages.value.filter((m) => getQaId(m) !== qaId)
+    ElMessage.success('已删除')
+  } catch {
+    // http 拦截器已弹出错误提示
+  }
+}
+
+/** 清空所有 */
+async function clearAll() {
+  try {
+    await ElMessageBox.confirm('确定要清空所有问答记录吗？此操作不可恢复。', '确认清空', {
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await http.delete('/ai/records')
+    messages.value = []
+    ElMessage.success('已清空所有记录')
+  } catch {
+    // 用户取消或 http 错误——无需额外操作
+  }
+}
+
+/* ========== 多选模式逻辑 ========== */
+
+function enterSelectMode() {
+  selectMode.value = true
+  selectedQaIds.value = []
+}
+
+function exitSelectMode() {
+  selectMode.value = false
+  selectedQaIds.value = []
+}
+
+function toggleSelect(qaId) {
+  const idx = selectedQaIds.value.indexOf(qaId)
+  if (idx >= 0) {
+    selectedQaIds.value.splice(idx, 1)
+  } else {
+    selectedQaIds.value.push(qaId)
+  }
+}
+
+/** 所有可选的 qa_id（去重） */
+const allSelectableIds = computed(() => {
+  const ids = new Set()
+  for (const m of messages.value) {
+    const id = getQaId(m)
+    if (id !== null) ids.add(id)
+  }
+  return [...ids]
+})
+
+const isAllSelected = computed(() => {
+  return (
+    allSelectableIds.value.length > 0 &&
+    selectedQaIds.value.length === allSelectableIds.value.length
+  )
+})
+
+const isIndeterminate = computed(() => {
+  return (
+    selectedQaIds.value.length > 0 &&
+    selectedQaIds.value.length < allSelectableIds.value.length
+  )
+})
+
+function toggleAll(val) {
+  selectedQaIds.value = val ? [...allSelectableIds.value] : []
+}
+
+/** 批量删除选中 */
+async function batchDelete() {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除选中的 ${selectedQaIds.value.length} 条问答记录？此操作不可恢复。`,
+      '确认删除',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
+    )
+    await http.post('/ai/records/batch-delete', [...selectedQaIds.value])
+    const ids = new Set(selectedQaIds.value)
+    messages.value = messages.value.filter((m) => !ids.has(getQaId(m)))
+    ElMessage.success(`已删除 ${ids.size} 条记录`)
+    selectedQaIds.value = []
+    selectMode.value = false
+  } catch {
+    // 用户取消或 http 错误
   }
 }
 </script>
@@ -124,6 +308,28 @@ async function send() {
   min-height: 620px;
 }
 
+/* ---- 工具栏 ---- */
+.ai-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.ai-toolbar-left,
+.ai-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-selected-count {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ---- 历史消息区域 ---- */
 .ai-history {
   flex: 1;
   display: flex;
@@ -138,6 +344,7 @@ async function send() {
 }
 
 .ai-message {
+  position: relative;
   max-width: 78%;
   padding: 12px 14px;
   border: 1px solid #e5e7eb;
@@ -169,6 +376,40 @@ async function send() {
   color: #94a3b8;
 }
 
+/* ---- 悬停删除图标 ---- */
+.ai-delete-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 15px;
+  color: #94a3b8;
+  cursor: pointer;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.ai-message:hover .ai-delete-icon {
+  opacity: 1;
+}
+
+.ai-delete-icon:hover {
+  color: #f56c6c;
+}
+
+/* ---- 多选模式 ---- */
+.ai-message.is-select-mode {
+  padding-left: 40px;
+}
+
+.ai-select-wrapper {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 1;
+}
+
+/* ---- Markdown ---- */
 .markdown-body {
   white-space: normal;
   line-height: 1.7;
@@ -273,6 +514,7 @@ async function send() {
   text-decoration: underline;
 }
 
+/* ---- 输入区域 ---- */
 .ai-input-row {
   display: grid;
   grid-template-columns: 1fr 96px;

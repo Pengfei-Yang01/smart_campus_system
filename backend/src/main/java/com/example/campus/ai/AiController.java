@@ -6,8 +6,12 @@ import com.example.campus.common.Db;
 import com.example.campus.dto.AiRequests.ChatRequest;
 import com.example.campus.security.CurrentUser;
 import com.example.campus.security.UserContext;
+import java.util.List;
 import java.util.Map;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -65,13 +69,14 @@ public class AiController {
         int costMs = Math.toIntExact(Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - start));
         String answer = limitAnswer(result.answer());
 
-        db.insert("""
+        Long qaId = db.insert("""
                 insert into ai_qa_record(user_id, question, answer, model_name, prompt_tokens, completion_tokens, cost_ms)
                 values(?, ?, ?, ?, ?, ?, ?)
                 """, user.userId(), question, answer, result.modelName(),
                 result.promptTokens(), result.completionTokens(), costMs);
 
         return ApiResponse.ok(Map.of(
+                "qaId", qaId,
                 "answer", answer,
                 "modelName", result.modelName(),
                 "promptTokens", result.promptTokens(),
@@ -96,8 +101,44 @@ public class AiController {
     }
 
     /**
-     * 限制落库回答长度，避免异常长文本影响数据库和页面展示。
+     * 删除当前用户指定 ID 的问答记录。
      */
+    @DeleteMapping("/record/{qaId}")
+    public ApiResponse<Object> deleteRecord(@PathVariable Long qaId) {
+        CurrentUser user = UserContext.get();
+        int affected = db.jdbc().update("delete from ai_qa_record where qa_id = ? and user_id = ?", qaId, user.userId());
+        if (affected == 0) {
+            throw new BusinessException("记录不存在或无权删除");
+        }
+        return ApiResponse.ok(Map.of());
+    }
+
+    /**
+     * 批量删除当前用户的问答记录。
+     */
+    @PostMapping("/records/batch-delete")
+    public ApiResponse<Object> batchDelete(@RequestBody List<Long> qaIds) {
+        if (qaIds == null || qaIds.isEmpty()) {
+            throw new BusinessException("请选择要删除的记录");
+        }
+        CurrentUser user = UserContext.get();
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("ids", qaIds);
+        params.addValue("userId", user.userId());
+        db.named().update("delete from ai_qa_record where qa_id in (:ids) and user_id = :userId", params);
+        return ApiResponse.ok(Map.of());
+    }
+
+    /**
+     * 清空当前用户的所有问答记录。
+     */
+    @DeleteMapping("/records")
+    public ApiResponse<Object> clearRecords() {
+        CurrentUser user = UserContext.get();
+        db.jdbc().update("delete from ai_qa_record where user_id = ?", user.userId());
+        return ApiResponse.ok(Map.of());
+    }
+
     private String limitAnswer(String answer) {
         if (answer == null || answer.length() <= MAX_STORED_ANSWER_CHARS) {
             return answer;
