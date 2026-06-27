@@ -19,7 +19,7 @@
                 <el-input v-model="loginForm.username" placeholder="用户名或学号" />
               </el-form-item>
               <el-form-item label="密码">
-                <el-input v-model="loginForm.password" type="password" show-password />
+                <el-input v-model="loginForm.password" type="password" show-password @input="loginForm.password = noChinese($event)" />
               </el-form-item>
               <el-button native-type="submit" type="primary" :loading="loading" style="width: 100%">登录</el-button>
             </el-form>
@@ -31,13 +31,13 @@
                   <el-input v-model="registerForm.username" />
                 </el-form-item>
                 <el-form-item label="学号">
-                  <el-input v-model="registerForm.studentNo" />
+                  <el-input v-model="registerForm.studentNo" @input="registerForm.studentNo = alphanumeric($event)" />
                 </el-form-item>
                 <el-form-item label="姓名">
-                  <el-input v-model="registerForm.realName" />
+                  <el-input v-model="registerForm.realName" @input="registerForm.realName = noSpace($event)" />
                 </el-form-item>
                 <el-form-item label="密码">
-                  <el-input v-model="registerForm.password" type="password" show-password />
+                  <el-input v-model="registerForm.password" type="password" show-password @input="registerForm.password = noChinese($event)" />
                 </el-form-item>
                 <el-form-item label="学院">
                   <el-input v-model="registerForm.college" />
@@ -46,10 +46,12 @@
                   <el-input v-model="registerForm.major" />
                 </el-form-item>
                 <el-form-item label="班级">
-                  <el-input v-model="registerForm.className" />
+                  <el-input v-model="registerForm.className" @input="registerForm.className = digits($event)" />
                 </el-form-item>
                 <el-form-item label="年级">
-                  <el-input v-model="registerForm.grade" />
+                  <el-select v-model="registerForm.grade" placeholder="请选择年级">
+                    <el-option v-for="y in years" :key="y" :label="y" :value="y" />
+                  </el-select>
                 </el-form-item>
               </div>
               <el-button native-type="submit" type="primary" :loading="loading" style="width: 100%">注册并进入</el-button>
@@ -76,6 +78,15 @@ const DEFAULT_PWD = '123456'
 const DEFAULT_COLLEGE = '软件学院'
 const DEFAULT_MAJOR = '软件工程'
 const DEFAULT_GRADE = '2023'
+
+// 输入过滤函数
+const noChinese = (v) => v.replace(/[一-鿿\s]/g, '')
+const alphanumeric = (v) => v.replace(/[^\w]/g, '')
+const digits = (v) => v.replace(/\D/g, '')
+const noSpace = (v) => v.replace(/\s/g, '')
+
+// 年级选项
+const years = Array.from({ length: 8 }, (_, i) => String(2020 + i))
 
 // 实例初始化
 const authStore = useAuthStore()
