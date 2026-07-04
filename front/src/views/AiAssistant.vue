@@ -326,7 +326,7 @@ async function batchDelete() {
 
 .ai-selected-count {
   font-size: 13px;
-  color: #64748b;
+  color: var(--miuix-text-secondary, #64748B);
 }
 
 /* ---- 历史消息区域 ---- */
@@ -346,18 +346,19 @@ async function batchDelete() {
 .ai-message {
   position: relative;
   max-width: 78%;
-  padding: 12px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
+  padding: 14px 16px;
+  border: 1px solid var(--miuix-border, #E8ECF0);
+  border-radius: var(--miuix-radius-md, 12px);
+  background: var(--miuix-surface, #fff);
   white-space: pre-wrap;
   line-height: 1.6;
+  box-shadow: var(--miuix-shadow-sm, 0 1px 2px rgba(0,0,0,0.04));
 }
 
 .ai-message.user {
   align-self: flex-end;
-  background: #ecf5ff;
-  border-color: #b3d8ff;
+  background: var(--miuix-primary-light, #EBF4FA);
+  border-color: #B8D8F0;
 }
 
 .ai-message.assistant {
@@ -367,13 +368,14 @@ async function batchDelete() {
 .ai-message-role {
   margin-bottom: 6px;
   font-size: 12px;
-  color: #64748b;
+  font-weight: 500;
+  color: var(--miuix-text-secondary, #64748B);
 }
 
 .ai-message-meta {
   margin-top: 8px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--miuix-text-tertiary, #94A3B8);
 }
 
 /* ---- 悬停删除图标 ---- */
@@ -382,7 +384,7 @@ async function batchDelete() {
   top: 8px;
   right: 8px;
   font-size: 15px;
-  color: #94a3b8;
+  color: var(--miuix-text-tertiary, #94A3B8);
   cursor: pointer;
   z-index: 1;
   opacity: 0;
@@ -394,18 +396,18 @@ async function batchDelete() {
 }
 
 .ai-delete-icon:hover {
-  color: #f56c6c;
+  color: #DC2626;
 }
 
 /* ---- 多选模式 ---- */
 .ai-message.is-select-mode {
-  padding-left: 40px;
+  padding-left: 44px;
 }
 
 .ai-select-wrapper {
   position: absolute;
-  left: 10px;
-  top: 10px;
+  left: 12px;
+  top: 12px;
   z-index: 1;
 }
 
@@ -423,6 +425,7 @@ async function batchDelete() {
   margin: 14px 0 6px;
   font-weight: 600;
   line-height: 1.4;
+  color: var(--miuix-text-primary, #1E293B);
 }
 
 .markdown-body h1 { font-size: 1.3em; }
@@ -445,35 +448,35 @@ async function batchDelete() {
 
 .markdown-body code {
   padding: 2px 6px;
-  border-radius: 4px;
-  background: #f1f5f9;
-  color: #d63384;
+  border-radius: 6px;
+  background: var(--miuix-border-light, #F1F4F6);
+  color: #1D7AB0;
   font-size: 0.9em;
 }
 
 .markdown-body pre {
   margin: 10px 0;
-  padding: 12px 14px;
-  border-radius: 6px;
-  background: #1e293b;
+  padding: 14px 16px;
+  border-radius: var(--miuix-radius-sm, 8px);
+  background: #1E293B;
   overflow-x: auto;
 }
 
 .markdown-body pre code {
   padding: 0;
   background: none;
-  color: #e2e8f0;
+  color: #E2E8F0;
   font-size: 13px;
   line-height: 1.5;
 }
 
 .markdown-body blockquote {
   margin: 8px 0;
-  padding: 4px 14px;
-  border-left: 4px solid #409eff;
-  color: #64748b;
-  background: #f8fafc;
-  border-radius: 0 4px 4px 0;
+  padding: 4px 16px;
+  border-left: 3px solid var(--miuix-primary, #1D7AB0);
+  color: var(--miuix-text-secondary, #64748B);
+  background: var(--miuix-primary-light, #EBF4FA);
+  border-radius: 0 6px 6px 0;
 }
 
 .markdown-body table {
@@ -485,20 +488,21 @@ async function batchDelete() {
 
 .markdown-body th,
 .markdown-body td {
-  padding: 6px 10px;
-  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  border: 1px solid var(--miuix-border, #E8ECF0);
   text-align: left;
 }
 
 .markdown-body th {
-  background: #f1f5f9;
+  background: var(--miuix-bg, #F7F8FA);
   font-weight: 600;
+  color: var(--miuix-text-primary, #1E293B);
 }
 
 .markdown-body hr {
   margin: 14px 0;
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--miuix-border, #E8ECF0);
 }
 
 .markdown-body strong {
@@ -506,7 +510,7 @@ async function batchDelete() {
 }
 
 .markdown-body a {
-  color: #409eff;
+  color: var(--miuix-primary, #1D7AB0);
   text-decoration: none;
 }
 
@@ -517,7 +521,7 @@ async function batchDelete() {
 /* ---- 输入区域 ---- */
 .ai-input-row {
   display: grid;
-  grid-template-columns: 1fr 96px;
+  grid-template-columns: 1fr 100px;
   gap: 12px;
   align-items: stretch;
 }
@@ -529,7 +533,7 @@ async function batchDelete() {
 
 .waiting-dot {
   display: inline-block;
-  color: #409eff;
+  color: var(--miuix-primary, #1D7AB0);
   font-size: 10px;
   margin-right: 4px;
   animation: waiting-pulse 1.2s ease-in-out infinite;

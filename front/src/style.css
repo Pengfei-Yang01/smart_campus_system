@@ -1,8 +1,65 @@
 :root {
-/* 页面和自定义布局共用的全局视觉默认值。 */
+  /* ===== Miuix (HyperOS) Design Tokens ===== */
+  --miuix-bg: #F7F8FA;
+  --miuix-surface: #FFFFFF;
+  --miuix-primary: #1D7AB0;
+  --miuix-primary-hover: #156396;
+  --miuix-primary-light: #EBF4FA;
+  --miuix-text-primary: #1E293B;
+  --miuix-text-secondary: #64748B;
+  --miuix-text-tertiary: #94A3B8;
+  --miuix-border: #E8ECF0;
+  --miuix-border-light: #F1F4F6;
+  --miuix-shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.02);
+  --miuix-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.03);
+  --miuix-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.03);
+  --miuix-radius-sm: 8px;
+  --miuix-radius-md: 12px;
+  --miuix-radius-lg: 16px;
+  --miuix-sidebar-width: 240px;
+
+  /* ===== Element Plus Overrides ===== */
+  --el-color-primary: #1D7AB0;
+  --el-color-primary-light-3: #5C9EC5;
+  --el-color-primary-light-5: #8DBDD8;
+  --el-color-primary-light-7: #BDDBEB;
+  --el-color-primary-light-8: #D3E8F3;
+  --el-color-primary-light-9: #EBF4FA;
+  --el-color-primary-dark-2: #156396;
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 20px;
+  --el-font-size-base: 14px;
+  --el-font-size-small: 13px;
+  --el-font-size-large: 16px;
+  --el-border-color: #E8ECF0;
+  --el-border-color-light: #F1F4F6;
+  --el-border-color-lighter: #F4F6F8;
+  --el-bg-color: #F7F8FA;
+  --el-bg-color-overlay: #FFFFFF;
+  --el-text-color-primary: #1E293B;
+  --el-text-color-regular: #475569;
+  --el-text-color-secondary: #64748B;
+  --el-text-color-placeholder: #94A3B8;
+  --el-fill-color: #F7F8FA;
+  --el-fill-color-light: #F1F4F6;
+  --el-fill-color-lighter: #F4F6F8;
+  --el-mask-color: rgba(0, 0, 0, 0.35);
+  --el-box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 1px rgba(0,0,0,0.02);
+  --el-box-shadow-light: 0 1px 2px rgba(0,0,0,0.03), 0 1px 1px rgba(0,0,0,0.02);
+  --el-box-shadow-lighter: 0 1px 1px rgba(0,0,0,0.02);
+
+  /* ===== Element Plus Menu Overrides ===== */
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: #F1F4F6;
+  --el-menu-active-color: #1D7AB0;
+  --el-menu-text-color: #475569;
+  --el-menu-hover-text-color: #1E293B;
+
+  /* Base styles */
   font-family: Inter, "Microsoft YaHei", Arial, sans-serif;
-  color: #172033;
-  background: #eef3f7;
+  color: var(--miuix-text-primary);
+  background: var(--miuix-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,81 +75,142 @@ body {
   min-height: 100vh;
 }
 
+/* ============================================
+   Miuix Sidebar
+   ============================================ */
 .page {
-  /* 登录后应用页面背景。 */
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(47, 94, 111, 0.08), rgba(238, 243, 247, 0) 260px),
-    #eef3f7;
+  background: var(--miuix-bg);
 }
 
 .sidebar {
-/* 主布局使用的固定左侧导航。 */
   position: fixed;
   inset: 0 auto 0 0;
-  width: 236px;
-  background: #ffffff;
-  border-right: 1px solid #dce5eb;
-  padding: 16px 10px;
+  width: var(--miuix-sidebar-width);
+  background: var(--miuix-surface);
+  border-right: 1px solid var(--miuix-border);
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
 }
 
 .side-brand {
-  height: 48px;
-  padding: 0 10px 12px;
-  border-bottom: 1px solid #edf1f5;
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 16px;
+  margin: 0 4px 8px;
+  border-bottom: 1px solid var(--miuix-border-light);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--miuix-text-primary);
+  letter-spacing: 0.02em;
 }
 
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--miuix-radius-sm);
+  display: grid;
+  place-items: center;
+  color: white;
+  background: var(--miuix-primary);
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+/* Miuix-style el-menu customization */
+.sidebar .el-menu {
+  border-right: none;
+  background: transparent;
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: #F1F4F6;
+  --el-menu-active-color: #1D7AB0;
+  --el-menu-text-color: #475569;
+  --el-menu-hover-text-color: #1E293B;
+}
+
+.sidebar .el-menu-item {
+  height: 42px;
+  line-height: 42px;
+  padding: 0 12px !important;
+  margin: 1px 4px;
+  border-radius: var(--miuix-radius-sm);
+  font-size: 14px;
+  color: var(--miuix-text-secondary);
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.sidebar .el-menu-item:hover {
+  background: var(--miuix-border-light);
+  color: var(--miuix-text-primary);
+}
+
+.sidebar .el-menu-item.is-active {
+  color: var(--miuix-primary);
+  background: var(--miuix-primary-light);
+  font-weight: 500;
+}
+
+/* Active indicator — subtle left bar like HyperOS */
+.sidebar .el-menu-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 0 3px 3px 0;
+  background: var(--miuix-primary);
+}
+
+.sidebar .el-menu-item .el-icon {
+  width: 20px;
+  margin-right: 8px;
+  font-size: 18px;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Main Content Area
+   ============================================ */
 .main {
-  /* 主内容区在桌面端为固定侧边栏预留空间。 */
   min-height: 100vh;
-  margin-left: 236px;
-  padding: 0 24px 28px;
+  margin-left: var(--miuix-sidebar-width);
+  padding: 0 32px 32px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 22px;
-  line-height: 1.35;
-}
-
-.page-subtitle {
-  margin: 3px 0 0;
-  color: #6b778c;
-  font-size: 13px;
-}
-
-.shell {
-  width: min(1180px, calc(100vw - 32px));
-  margin: 0 auto;
-}
-
+/* ============================================
+   Topbar
+   ============================================ */
 .topbar {
-  /* 页面头部，包含标题、角色标签和退出按钮。 */
   height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  border-bottom: 1px solid var(--miuix-border-light);
+  margin-bottom: 20px;
 }
 
-.brand {
-  /* 登录页和侧边栏共用的产品标识区域。 */
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 700;
-  font-size: 18px;
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--miuix-text-primary);
+  letter-spacing: 0.01em;
 }
 
-.brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  color: white;
-  background: #2f5e6f;
+.page-subtitle {
+  margin: 2px 0 0;
+  color: var(--miuix-text-secondary);
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .toolbar {
@@ -101,73 +219,101 @@ body {
   gap: 10px;
 }
 
+/* ============================================
+   Shell / Container
+   ============================================ */
+.shell {
+  width: min(1180px, calc(100vw - 64px));
+  margin: 0 auto;
+}
+
+/* ============================================
+   Brand (shared)
+   ============================================ */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* ============================================
+   Panels / Cards
+   ============================================ */
 .panel {
-  /* 表格、表单和仪表盘使用的主要内容容器。 */
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid #dce5eb;
-  border-radius: 8px;
-  padding: 18px;
-  box-shadow: 0 10px 28px rgba(35, 52, 69, 0.08);
+  background: var(--miuix-surface);
+  border: 1px solid var(--miuix-border);
+  border-radius: var(--miuix-radius-md);
+  padding: 20px;
+  box-shadow: var(--miuix-shadow-sm);
 }
 
 .compact-panel {
-  background: #fff;
-  border: 1px solid #dce5eb;
-  border-radius: 8px;
-  padding: 14px;
+  background: var(--miuix-surface);
+  border: 1px solid var(--miuix-border);
+  border-radius: var(--miuix-radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--miuix-shadow-sm);
 }
 
 .section-title {
   margin: 0 0 14px;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--miuix-text-primary);
 }
 
 .muted {
-  color: #6b778c;
+  color: var(--miuix-text-secondary);
 }
 
+/* ============================================
+   Metric Cards (Dashboard)
+   ============================================ */
 .metric-grid {
-  /* 仪表盘四列指标布局。 */
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .metric {
-  min-height: 92px;
-  border: 1px solid #dce5eb;
-  border-radius: 8px;
-  padding: 14px;
-  background: #fff;
+  min-height: 90px;
+  border: 1px solid var(--miuix-border);
+  border-radius: var(--miuix-radius-md);
+  padding: 16px 18px;
+  background: var(--miuix-surface);
+  box-shadow: var(--miuix-shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.metric:hover {
+  box-shadow: var(--miuix-shadow-md);
 }
 
 .metric b {
   display: block;
-  margin-top: 8px;
-  font-size: 28px;
-  color: #234b5a;
+  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--miuix-primary);
 }
 
+.metric .muted {
+  font-size: 13px;
+}
+
+/* ============================================
+   Grid Layouts
+   ============================================ */
 .grid-2 {
-  /* 仪表盘和详情组合使用的双列内容布局。 */
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
   gap: 16px;
 }
 
-.table-actions {
-  /* 表格和表单上方的工具栏，小屏幕下会自动换行。 */
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
 .form-grid {
-  /* 弹窗和编辑面板使用的双列表单布局。 */
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -177,87 +323,376 @@ body {
   grid-column: 1 / -1;
 }
 
+/* ============================================
+   Table Actions Toolbar
+   ============================================ */
+.table-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+/* ============================================
+   Login Page — Miuix Style
+   ============================================ */
 .login-wrap {
-  /* 全屏居中的登录/注册页面背景。 */
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 24px;
-  background:
-    linear-gradient(135deg, rgba(47, 94, 111, 0.14), rgba(189, 135, 55, 0.1)),
-    #eef3f7;
+  background: var(--miuix-bg);
 }
 
 .login-card {
-  /* 左右分栏登录面板：左侧介绍，右侧表单。 */
-  width: min(920px, 100%);
+  width: min(900px, 100%);
   display: grid;
   grid-template-columns: 1fr 420px;
   overflow: hidden;
-  border-radius: 8px;
-  background: white;
-  border: 1px solid #dce5eb;
-  box-shadow: 0 18px 48px rgba(35, 52, 69, 0.14);
+  border-radius: var(--miuix-radius-lg);
+  background: var(--miuix-surface);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.04);
 }
 
 .login-side {
-  padding: 42px;
-  background: #25485a;
+  padding: 48px 42px;
+  background: linear-gradient(145deg, #1D7AB0 0%, #155d8a 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-side .brand {
+  font-size: 18px;
+  gap: 12px;
   color: white;
 }
 
+.login-side .brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--miuix-radius-sm);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  font-size: 18px;
+}
+
 .login-side h1 {
-  margin: 18px 0 10px;
-  font-size: 30px;
-  line-height: 1.25;
+  margin: 24px 0 12px;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.login-side p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.75;
+  line-height: 1.6;
 }
 
 .login-form {
-  padding: 34px;
+  padding: 36px 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
+/* Miuix-style tabs in login */
+.login-form .el-tabs__item {
+  font-size: 15px;
+  font-weight: 500;
+  height: 44px;
+  line-height: 44px;
+}
+
+.login-form .el-tabs__active-bar {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--miuix-primary);
+}
+
+.login-form .el-form-item {
+  margin-bottom: 18px;
+}
+
+.login-form .el-form-item__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--miuix-text-secondary);
+  padding-bottom: 4px;
+}
+
+.login-form .el-button--primary {
+  height: 42px;
+  border-radius: var(--miuix-radius-md);
+  font-size: 15px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.login-form .el-input__wrapper {
+  border-radius: var(--miuix-radius-sm);
+  box-shadow: 0 0 0 1px var(--miuix-border) inset;
+  transition: box-shadow 0.2s;
+}
+
+.login-form .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--miuix-border) inset;
+}
+
+.login-form .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1.5px var(--miuix-primary) inset;
+}
+
+/* ============================================
+   Status Pill / Tag
+   ============================================ */
 .status-pill {
   display: inline-flex;
   align-items: center;
-  height: 24px;
+  height: 22px;
   padding: 0 8px;
   border-radius: 999px;
-  font-size: 12px;
-  background: #ecf5ff;
-  color: #21618c;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--miuix-primary-light);
+  color: var(--miuix-primary);
 }
 
+/* ============================================
+   Detail List (Key-Value Grid)
+   ============================================ */
 .detail-list {
-  /* 详情页和管理员弹窗使用的紧凑键值网格。 */
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 18px;
 }
 
 .detail-list div {
-  min-height: 34px;
+  min-height: 32px;
 }
 
 .detail-list span {
   display: block;
-  color: #6b778c;
+  color: var(--miuix-text-secondary);
   font-size: 12px;
+  line-height: 1.4;
 }
 
 .detail-list b {
   font-weight: 600;
+  color: var(--miuix-text-primary);
 }
 
+/* ============================================
+   Element Plus Table Overrides
+   ============================================ */
+.el-table {
+  border-radius: var(--miuix-radius-md);
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell {
+  background: var(--miuix-bg);
+  color: var(--miuix-text-secondary);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 10px 0;
+}
+
+.el-table .el-table__cell {
+  padding: 10px 0;
+}
+
+.el-table--border .el-table__cell {
+  border-color: var(--miuix-border-light);
+}
+
+.el-table__inner-wrapper::before {
+  display: none;
+}
+
+.el-table__body-wrapper tr:hover > td {
+  background: var(--miuix-primary-light) !important;
+}
+
+/* ============================================
+   Element Plus Dialog Overrides
+   ============================================ */
+.el-dialog {
+  border-radius: var(--miuix-radius-lg) !important;
+  box-shadow: var(--miuix-shadow-lg) !important;
+}
+
+.el-dialog__header {
+  padding: 20px 24px 0;
+  margin: 0;
+}
+
+.el-dialog__title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--miuix-text-primary);
+}
+
+.el-dialog__body {
+  padding: 16px 24px 24px;
+}
+
+.el-dialog__footer {
+  padding: 0 24px 20px;
+}
+
+/* ============================================
+   Element Plus Button Overrides
+   ============================================ */
+.el-button {
+  border-radius: var(--miuix-radius-sm);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--miuix-primary);
+  --el-button-border-color: var(--miuix-primary);
+  --el-button-hover-bg-color: var(--miuix-primary-hover);
+  --el-button-hover-border-color: var(--miuix-primary-hover);
+  --el-button-active-bg-color: var(--miuix-primary-hover);
+}
+
+.el-button--small {
+  border-radius: 8px;
+}
+
+/* ============================================
+   Element Plus Input Overrides
+   ============================================ */
+.el-input__wrapper {
+  border-radius: var(--miuix-radius-sm);
+  box-shadow: 0 0 0 1px var(--miuix-border) inset;
+  transition: box-shadow 0.2s;
+}
+
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--miuix-border) inset;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1.5px var(--miuix-primary) inset;
+}
+
+.el-textarea__wrapper {
+  border-radius: var(--miuix-radius-sm);
+  box-shadow: 0 0 0 1px var(--miuix-border) inset;
+  transition: box-shadow 0.2s;
+}
+
+.el-textarea__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--miuix-border) inset;
+}
+
+.el-textarea__wrapper.is-focus {
+  box-shadow: 0 0 0 1.5px var(--miuix-primary) inset;
+}
+
+/* ============================================
+   Element Plus Tag Overrides
+   ============================================ */
+.el-tag {
+  border-radius: 6px;
+  font-weight: 500;
+  border: none;
+  padding: 0 10px;
+  height: 28px;
+  line-height: 28px;
+}
+
+.el-tag--danger {
+  background: #FEF2F2;
+  color: #DC2626;
+}
+
+.el-tag--warning {
+  background: #FFFBEB;
+  color: #D97706;
+}
+
+.el-tag--success {
+  background: #F0FDF4;
+  color: #16A34A;
+}
+
+/* ============================================
+   Element Plus Select Overrides
+   ============================================ */
+.el-select .el-input__wrapper {
+  border-radius: var(--miuix-radius-sm);
+}
+
+/* ============================================
+   Element Plus Tabs Overrides
+   ============================================ */
+.el-tabs__item {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--miuix-text-secondary);
+  transition: color 0.2s;
+}
+
+.el-tabs__item.is-active {
+  color: var(--miuix-primary);
+}
+
+.el-tabs__active-bar {
+  background: var(--miuix-primary);
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* ============================================
+   Element Plus Card Overrides
+   ============================================ */
+.el-card {
+  border-radius: var(--miuix-radius-md);
+  border: 1px solid var(--miuix-border);
+  box-shadow: var(--miuix-shadow-sm);
+}
+
+/* ============================================
+   Element Plus Message / Notification
+   ============================================ */
+.el-message {
+  border-radius: var(--miuix-radius-sm);
+  border: 1px solid var(--miuix-border);
+  box-shadow: var(--miuix-shadow-md);
+}
+
+/* ============================================
+   Element Plus Collapse
+   ============================================ */
+.el-collapse-item__header {
+  font-weight: 500;
+  height: 46px;
+  line-height: 46px;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
 @media (max-width: 860px) {
-  /* 移动端布局：侧边栏进入普通文档流，网格折叠为单列。 */
   .sidebar {
     position: static;
     width: auto;
+    padding: 12px;
   }
 
   .main {
     margin-left: 0;
-    padding: 0 16px 20px;
+    padding: 0 16px 24px;
   }
 
   .metric-grid,
@@ -268,12 +703,16 @@ body {
   }
 
   .login-side {
-    padding: 28px;
+    padding: 32px 28px;
   }
 
   .topbar {
     height: auto;
-    padding: 14px 0;
+    padding: 12px 0;
     align-items: flex-start;
+  }
+
+  .shell {
+    width: calc(100vw - 32px);
   }
 }
